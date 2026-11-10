@@ -406,6 +406,216 @@ h1 {
   border-color: var(--ok);
 }
 
+/* --- library ------------------------------------------------------------ */
+
+.view-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.library-row {
+  justify-content: flex-end;
+  margin: -8px 0 10px;
+}
+
+.library-title {
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+  font-weight: 650;
+}
+
+.storage {
+  display: grid;
+  gap: 3px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.storage-line {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+/* The persist reminder is a licence-free nudge, so it reads as information. */
+.storage-persist {
+  color: var(--deep);
+}
+
+.library-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.library-count {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.library-action {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--deep);
+  background: transparent;
+  color: var(--deep);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.library-action:disabled {
+  border-color: var(--rule);
+  color: #b9b2a2;
+  cursor: default;
+}
+
+.clip-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.clip {
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.clip-head {
+  display: grid;
+  gap: 2px;
+}
+
+.clip-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.clip-meta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--deep);
+  font-size: 0.86rem;
+  text-decoration: none;
+}
+
+.clip-meta:hover {
+  text-decoration: underline;
+}
+
+.clip-stats {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.clip-status {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.clip-status:empty {
+  display: none;
+}
+
+.clip-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.clip-action {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--deep);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.clip-action-danger {
+  border-color: #e3c9c2;
+  color: #a3352a;
+}
+
+.clip-rename {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.clip-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  /* 16px keeps iOS from zooming the page when the field is focused. */
+  font: inherit;
+  font-size: 1rem;
+}
+
+.clip-save,
+.clip-cancel {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.clip-save {
+  border: 1px solid var(--deep);
+  background: var(--deep);
+  color: #fbf8f1;
+}
+
+.clip-cancel {
+  border: 1px solid var(--rule);
+  background: transparent;
+  color: var(--deep);
+}
+
+.clip-empty {
+  padding: 16px;
+  border: 1px dashed var(--rule);
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.library-action:focus-visible,
+.clip-action:focus-visible,
+.clip-input:focus-visible,
+.clip-save:focus-visible,
+.clip-cancel:focus-visible,
+.clip-meta:focus-visible,
+.library-link:focus-visible {
+  outline: 3px solid var(--deep);
+  outline-offset: 2px;
+}
+
 /* --- recorder ----------------------------------------------------------- */
 
 .recorder {

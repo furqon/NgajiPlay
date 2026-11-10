@@ -4,6 +4,7 @@ import { pageHref } from '../router';
 import { fill, t } from '../strings';
 import type { QuranData } from '../types';
 import { el } from './dom';
+import { libraryLink } from './library-view';
 
 /**
  * Returning from a page re-renders this screen from scratch, so the last query
@@ -41,6 +42,7 @@ export function renderSearch(target: HTMLElement): void {
 
   target.append(
     el('p', { class: 'tagline', attrs: { 'data-testid': 'tagline' }, text: t('tagline') }),
+    el('div', { class: 'view-row library-row' }, libraryLink()),
     form,
     state,
     results,

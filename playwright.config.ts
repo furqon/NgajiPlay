@@ -34,7 +34,11 @@ export default defineConfig({
     { name: 'shell', testMatch: /shell\.spec\.ts/, use: { baseURL: previewURL } },
     // The dev server: source modules can be imported into the page, so real
     // IndexedDB and real data files are exercised without duplicating logic.
-    { name: 'data', testMatch: /(data|ui|record)\.spec\.ts/, use: { baseURL: devURL } },
+    {
+      name: 'data',
+      testMatch: /(data|ui|record|library)\.spec\.ts/,
+      use: { baseURL: devURL },
+    },
   ],
   webServer: [
     {

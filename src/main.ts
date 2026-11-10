@@ -2,6 +2,7 @@ import './styles.css';
 import { parseRoute, type Route } from './router';
 import { currentLanguage, fill, t } from './strings';
 import { renderPage } from './ui/page-view';
+import { renderLibrary } from './ui/library-view';
 import { closeRecorder } from './ui/record-panel';
 import { renderSearch } from './ui/search-view';
 
@@ -26,7 +27,11 @@ async function render(route: Route): Promise<void> {
   const id = ++renderId;
 
   document.title =
-    route.name === 'page' ? fill(t('pageTitle'), { page: route.page }) : 'ngajiPlay';
+    route.name === 'page'
+      ? fill(t('pageTitle'), { page: route.page })
+      : route.name === 'library'
+        ? `${t('libraryTitle')} · ngajiPlay`
+        : 'ngajiPlay';
   window.scrollTo(0, 0);
   // A recording must not outlive the view that shows it: the microphone would
   // stay open and the timer would keep running off-screen.
@@ -35,6 +40,11 @@ async function render(route: Route): Promise<void> {
 
   if (route.name === 'search') {
     renderSearch(view);
+    return;
+  }
+
+  if (route.name === 'library') {
+    await renderLibrary(view, () => id === renderId);
     return;
   }
 

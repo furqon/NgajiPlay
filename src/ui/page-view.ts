@@ -4,6 +4,7 @@ import { clipsOnPage } from '../store/db';
 import { fill, t } from '../strings';
 import type { Clip, QuranData } from '../types';
 import { el } from './dom';
+import { libraryLink } from './library-view';
 import { sliceNodes } from './mushaf';
 import { openRecorder } from './record-panel';
 
@@ -17,10 +18,10 @@ export async function renderPage(
   pageNumber: number,
   isCurrent: () => boolean,
 ): Promise<void> {
-  target.append(backLink(), el('p', { class: 'state', text: t('loading') }));
+  target.append(navRow(), el('p', { class: 'state', text: t('loading') }));
 
   if (!Number.isInteger(pageNumber) || pageNumber < 1 || pageNumber > pageCount) {
-    target.replaceChildren(backLink(), missingPage(pageNumber));
+    target.replaceChildren(navRow(), missingPage(pageNumber));
     return;
   }
 
@@ -28,15 +29,20 @@ export async function renderPage(
     const data = await loadQuran();
     if (!isCurrent()) return;
     target.replaceChildren(
-      backLink(),
+      navRow(),
       pager(pageNumber),
       mushaf(data, pageNumber),
       sliceList(target, data, pageNumber, isCurrent),
     );
   } catch {
     if (!isCurrent()) return;
-    target.replaceChildren(backLink(), el('p', { class: 'state', text: t('loadError') }));
+    target.replaceChildren(navRow(), el('p', { class: 'state', text: t('loadError') }));
   }
+}
+
+/** Search on the left, the library on the right, both 44px tall. */
+function navRow(): HTMLElement {
+  return el('div', { class: 'view-row' }, backLink(), libraryLink());
 }
 
 function backLink(): HTMLElement {

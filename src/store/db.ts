@@ -63,6 +63,11 @@ function committed(transaction: IDBTransaction): Promise<void> {
   });
 }
 
+/** Metadata without the blob, so list views never hold audio in memory. */
+function toClip({ blob: _blob, ...clip }: ClipRecord): Clip {
+  return clip;
+}
+
 /** Saves a clip and its audio. Re-saving the same slice replaces it (FR-2.9). */
 export async function putClip(clip: Clip, blob: Blob): Promise<Clip> {
   const db = await openDatabase();
@@ -93,7 +98,7 @@ export async function clipsOnPage(page: number): Promise<Clip[]> {
     transaction.objectStore(CLIPS).index('by-page').getAll(page) as IDBRequest<ClipRecord[]>,
   );
 
-  return records.map(({ blob: _blob, ...clip }) => clip).sort((a, b) => a.surah - b.surah);
+  return records.map(toClip).sort((a, b) => a.surah - b.surah);
 }
 
 /** Metadata for every clip, in playlist order (FR-4.1), without holding blobs. */
@@ -105,8 +110,36 @@ export async function listClips(): Promise<Clip[]> {
   );
 
   return records
-    .map(({ blob: _blob, ...clip }) => clip)
+    .map(toClip)
     .sort((a, b) => a.page - b.page || a.surah - b.surah || a.ayahStart - b.ayahStart);
+}
+
+/**
+ * Changes only the display name (FR-4.2). The blob is never rewritten, and the
+ * deterministic id keeps the clip bound to its slice.
+ */
+export function renameClip(id: string, displayName: string): Promise<Clip | undefined> {
+  return openDatabase().then(
+    (db) =>
+      new Promise<Clip | undefined>((resolve, reject) => {
+        const transaction = db.transaction(CLIPS, 'readwrite');
+        const store = transaction.objectStore(CLIPS);
+        let updated: Clip | undefined;
+
+        // Chained from onsuccess rather than awaited: an await would let the
+        // transaction go inactive in stricter engines.
+        store.get(id).onsuccess = (event) => {
+          const record = (event.target as IDBRequest<ClipRecord | undefined>).result;
+          if (!record) return;
+          const renamed: ClipRecord = { ...record, displayName };
+          store.put(renamed);
+          updated = toClip(renamed);
+        };
+        transaction.oncomplete = () => resolve(updated);
+        transaction.onerror = () => reject(transaction.error ?? new Error('IndexedDB rename failed'));
+        transaction.onabort = () => reject(transaction.error ?? new Error('IndexedDB rename aborted'));
+      }),
+  );
 }
 
 export async function deleteClip(id: string): Promise<void> {

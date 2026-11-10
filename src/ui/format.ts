@@ -25,3 +25,23 @@ export function formatDuration(ms: number): string {
 export function formatKilobytes(bytes: number): string {
   return String(Math.max(1, Math.ceil(bytes / 1024)));
 }
+
+/** `1,2 MB` — one decimal, Indonesian comma, growing a unit only when it helps. */
+export function formatFileSize(bytes: number): string {
+  const kilobyte = 1024;
+  const megabyte = kilobyte * 1024;
+  const gigabyte = megabyte * 1024;
+
+  if (bytes >= gigabyte) return `${(bytes / gigabyte).toFixed(1).replace('.', ',')} GB`;
+  if (bytes >= megabyte) return `${(bytes / megabyte).toFixed(1).replace('.', ',')} MB`;
+  return `${Math.max(1, Math.ceil(bytes / kilobyte))} KB`;
+}
+
+/** `10 Nov 2026` in the app's language, used by the library (FR-4.1). */
+export function formatDate(ms: number, language: 'id' | 'en' = 'id'): string {
+  return new Date(ms).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}

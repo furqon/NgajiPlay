@@ -71,13 +71,14 @@ Retire the three unknowns that could invalidate later phases, then stand up an e
 
 ## Phase 4 — Library management
 
-- [ ] Library list in playlist order with duration, page, surah and date. (FR-4.1)
-- [ ] Rename display name. (FR-4.2)
-- [ ] Delete with confirmation. (FR-4.3)
-- [ ] Export a single clip and export all clips. (FR-4.4, FR-3.3)
-- [ ] Storage used / available quota display. (FR-4.5)
+- [x] **Library list — DONE 2026-11-10.** `#/library` (`src/ui/library-view.ts`) with every clip in playlist order, asserted with clips inserted out of order (1:1, 2:2, 100:4). Each row shows the display name, page · surah · ayah range (linked to the page), duration, size and created date. (FR-4.1)
+- [x] **Rename — DONE 2026-11-10.** Inline edit with save/cancel; only the display name changes, the blob is never rewritten and the id keeps the clip bound to its slice. Persists across a reload; the deterministic page/surah line stays visible (FR-3.2). (FR-4.2)
+- [x] **Delete with confirmation — DONE 2026-11-10.** The row switches to a two-button confirmation; cancel leaves the clip, confirm removes it, the count and empty state update, and it is still gone after a reload. (FR-4.3)
+- [x] **Export — DONE 2026-11-10.** `src/recording/export.ts` + one `<a download>` per clip, no archive dependency. Single export and "Ekspor semua" (sequential, 250 ms apart) both asserted by real browser download events; the downloaded file is byte-identical to the stored blob. Filenames are the sanitised display name plus `pNNN-sNNN` for uniqueness with the real codec's extension, e.g. `Ali-Bacaan-pagi-p001-s001.webm`; 15 unit tests cover the Windows/macOS/Android rules, Arabic names and the no-double-prefix case. (FR-4.4, FR-3.3)
+- [x] **Storage readout — DONE 2026-11-10.** Used, quota and still-free bytes, plus whether the browser has committed to keeping the data; `persist()` is requested once and recorded in settings, so it never nags. The screen also says plainly that clips live on this device and export is the backup (Risk table). (FR-4.5, FR-4.6)
+- [x] **Checks — DONE 2026-11-10.** 70 unit tests (15 new: filename sanitising and export naming) and 28 browser tests (6 new: order/metadata/storage, rename across a reload, delete confirmation across a reload, single export, export-all downloads, empty library + navigation). Whole build **369.8 KB gzipped**.
 
-**Done when** an exported MP4 clip (fMP4) plays in the phone's own media player, an exported WebM clip plays in a browser, and a deleted clip is gone after a reload.
+**Done when** an exported MP4 clip (fMP4) plays in the phone's own media player, an exported WebM clip plays in a browser, and a deleted clip is gone after a reload. **Browser ✅** — a deleted clip is gone after a reload, and the export writes the stored blob byte-for-byte (recorded clips of both codecs already decode and play from that same blob in `record.spec.ts`). **Phone ⏳** — the fMP4-in-a-gallery question from REQ §8.3 trap 2 is exactly the part that needs a device; if the exported AAC file does not play there, the fallback is WebM on Android rather than adding a remuxer.
 
 ## Phase 5 — Playback and repeat
 
