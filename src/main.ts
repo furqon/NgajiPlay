@@ -1,9 +1,12 @@
 import './styles.css';
-import { currentLanguage, t } from './strings';
+import { parseRoute, type Route } from './router';
+import { currentLanguage, fill, t } from './strings';
+import { renderPage } from './ui/page-view';
+import { renderSearch } from './ui/search-view';
 
+const view = document.querySelector<HTMLElement>('#view');
 const statusEl = document.querySelector('[data-testid="status"]');
 const statusTextEl = document.querySelector('[data-testid="status-text"]');
-const taglineEl = document.querySelector('[data-testid="tagline"]');
 
 function setStatus(state: 'ready' | 'firstLoad' | 'offline' | 'noSw', text: string): void {
   if (!statusEl || !statusTextEl) return;
@@ -13,12 +16,34 @@ function setStatus(state: 'ready' | 'firstLoad' | 'offline' | 'noSw', text: stri
 
 const language = currentLanguage();
 document.documentElement.lang = language;
-if (taglineEl) taglineEl.textContent = t('tagline', language);
+
+let renderId = 0;
+
+/** One render per route; a slower, older render must never paint over a newer one. */
+async function render(route: Route): Promise<void> {
+  if (!view) return;
+  const id = ++renderId;
+
+  document.title =
+    route.name === 'page' ? fill(t('pageTitle'), { page: route.page }) : 'ngajiPlay';
+  window.scrollTo(0, 0);
+  view.replaceChildren();
+
+  if (route.name === 'search') {
+    renderSearch(view);
+    return;
+  }
+
+  await renderPage(view, route.page, () => id === renderId);
+}
+
+window.addEventListener('hashchange', () => void render(parseRoute(window.location.hash)));
+void render(parseRoute(window.location.hash));
 
 /**
  * Registers the service worker and reflects its state in the shell.
- * The shell is the Phase 0 proof that the app is installable and works
- * offline; real screens arrive in Phase 2.
+ * The status pill is scaffolding for the offline proof; Phase 7 replaces it
+ * with the designed states.
  */
 async function registerServiceWorker(): Promise<void> {
   if (!('serviceWorker' in navigator)) {

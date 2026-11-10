@@ -48,7 +48,7 @@ These are settled. Changing one invalidates downstream tasks — re-open it deli
 
 - **FR-1.1** Search by page number, 1–604; out-of-range input is rejected with a message, not a crash.
 - **FR-1.2** Search by surah (number, Indonesian name, English name).
-- **FR-1.3** Results show the page number plus the surah(s) present on that page.
+- **FR-1.3** Results show the page number plus the surah(s) present on that page. A number ≤ 114 is both a page and a surah number, so both meanings are listed as separate labelled rows rather than one being guessed.
 - **FR-1.4** Page view shows every ayah on the page in order, with a visible header wherever a new surah begins.
 - **FR-1.5** Page view lists the surah slices on that page and marks which ones already have a clip.
 - **FR-1.6** Previous/next page navigation from the page view.
@@ -120,7 +120,7 @@ The playlist is derived, never stored: clips sorted by page, surah, ayah start.
 
 ## 7. Non-functional requirements
 
-- **NFR-1** Initial load ≤ 1.5 MB gzipped including the Quran font. Measured after Phase 1: 277 KB gzipped text + 52 KB subset font ≈ 330 KB, and the whole built shell comes to **358 KB gzipped**, about 23% of the budget. Bundling everything fits, so per-juz lazy loading is optional, not required.
+- **NFR-1** Initial load ≤ 1.5 MB gzipped including the Quran font. Measured after Phase 1: 277 KB gzipped text + 52 KB subset font ≈ 330 KB, and the whole built shell comes to **362 KB gzipped** after the Phase 2 page view, about 24% of the budget. Bundling everything fits, so per-juz lazy loading is optional, not required.
 - **NFR-2** Install size ≤ 5 MB excluding recordings.
 - **NFR-3** No network needed after first load for pages already visited.
 - **NFR-4** Recordings never leave the device except when the user exports them.

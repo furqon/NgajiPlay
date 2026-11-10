@@ -85,6 +85,17 @@ export async function getClip(id: string): Promise<ClipRecord | undefined> {
   return request<ClipRecord | undefined>(transaction.objectStore(CLIPS).get(id) as IDBRequest<ClipRecord | undefined>);
 }
 
+/** Metadata for the clips on one page, using the by-page index (FR-1.5). */
+export async function clipsOnPage(page: number): Promise<Clip[]> {
+  const db = await openDatabase();
+  const transaction = db.transaction(CLIPS, 'readonly');
+  const records = await request<ClipRecord[]>(
+    transaction.objectStore(CLIPS).index('by-page').getAll(page) as IDBRequest<ClipRecord[]>,
+  );
+
+  return records.map(({ blob: _blob, ...clip }) => clip).sort((a, b) => a.surah - b.surah);
+}
+
 /** Metadata for every clip, in playlist order (FR-4.1), without holding blobs. */
 export async function listClips(): Promise<Clip[]> {
   const db = await openDatabase();

@@ -14,7 +14,12 @@
   --deep: #0e4a3c;
   --ok: #2f7d5d;
   --wait: #b07a1e;
+  --rule: #e7e0cf;
   --quran: 'Amiri Quran', 'Traditional Arabic', serif;
+  /* Measured in a real render at 390px (REQ §8.2): 2.0 is required, 1.7 lets
+     the marks collide with the line above; 26px is the legibility floor. */
+  --mushaf-size: 26px;
+  --mushaf-line: 2;
   color-scheme: light;
 }
 
@@ -39,33 +44,51 @@ body {
     env(safe-area-inset-left);
 }
 
-.shell {
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  padding: 24px;
-  text-align: center;
-}
-
-.mark {
-  color: var(--deep);
-  line-height: 0;
-  margin-bottom: 0.25rem;
-}
-
 h1 {
-  font-size: 1.6rem;
+  font-size: 1.15rem;
   font-weight: 650;
   letter-spacing: -0.015em;
   margin: 0;
 }
 
+/* --- shell chrome ------------------------------------------------------- */
+
+.chrome {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 14px 16px 2px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.mark {
+  width: 28px;
+  height: 28px;
+  color: var(--deep);
+}
+
+.view {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 4px 16px 24px;
+}
+
+.foot {
+  display: flex;
+  justify-content: center;
+  padding: 0 16px 24px;
+}
+
 .tagline {
-  margin: 0;
-  max-width: 32ch;
+  margin: 0 0 16px;
+  max-width: 42ch;
   color: var(--muted);
   font-size: 0.95rem;
 }
@@ -74,11 +97,11 @@ h1 {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  margin: 0.75rem 0 0;
+  margin: 0;
   padding: 0.5rem 0.85rem;
   border-radius: 999px;
   background: #fff;
-  border: 1px solid #e7e0cf;
+  border: 1px solid var(--rule);
   font-size: 0.84rem;
   color: var(--muted);
   min-height: 44px;
@@ -89,6 +112,7 @@ h1 {
   height: 8px;
   border-radius: 50%;
   background: var(--muted);
+  flex: none;
 }
 
 .status[data-state='ready'] .dot {
@@ -98,6 +122,265 @@ h1 {
 .status[data-state='firstLoad'] .dot,
 .status[data-state='offline'] .dot {
   background: var(--wait);
+}
+
+/* --- search ------------------------------------------------------------- */
+
+.search {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  /* 16px keeps iOS from zooming the page when the field is focused. */
+  font-size: 1rem;
+}
+
+.search-input:focus-visible,
+.search-button:focus-visible,
+.result:focus-visible,
+.step:focus-visible,
+.back:focus-visible {
+  outline: 3px solid var(--deep);
+  outline-offset: 2px;
+}
+
+.search-button {
+  min-height: 48px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--deep);
+  color: #fbf8f1;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.state {
+  margin: 0 0 12px;
+  min-height: 1.5em;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.result {
+  display: grid;
+  gap: 2px;
+  min-height: 56px;
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: #fff;
+  color: inherit;
+  text-decoration: none;
+}
+
+.result-page {
+  font-weight: 600;
+}
+
+.result-surahs {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.empty {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  padding: 16px 0;
+  color: var(--muted);
+}
+
+.empty .result {
+  color: var(--deep);
+  text-decoration: underline;
+  min-height: 44px;
+  align-content: center;
+}
+
+/* --- page view ---------------------------------------------------------- */
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  color: var(--deep);
+  font-size: 0.92rem;
+  text-decoration: none;
+}
+
+.pager {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+}
+
+.pager-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--rule);
+  background: #fff;
+  color: var(--deep);
+  font-size: 1.5rem;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.step[aria-disabled='true'] {
+  color: #c9c2b0;
+  background: transparent;
+}
+
+.mushaf {
+  padding: 8px 0 20px;
+}
+
+.surah-header {
+  margin: 20px 0 4px;
+  padding: 10px 0;
+  text-align: center;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.surah-header:first-child {
+  margin-top: 12px;
+}
+
+.surah-name-ar {
+  margin: 0;
+  font-family: var(--quran);
+  font-size: 1.6rem;
+  line-height: 1.6;
+}
+
+.surah-name-latin {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.basmala {
+  margin: 10px 0 2px;
+  font-family: var(--quran);
+  font-size: 1.4rem;
+  line-height: 1.9;
+  text-align: center;
+}
+
+.ayahs {
+  margin: 0 0 6px;
+  font-family: var(--quran);
+  font-size: var(--mushaf-size);
+  line-height: var(--mushaf-line);
+  text-align: justify;
+}
+
+.ayah {
+  scroll-margin-top: 72px;
+}
+
+.ayah-mark {
+  color: var(--deep);
+  font-size: 0.82em;
+  padding-inline: 0.08em;
+}
+
+.slices {
+  border-top: 1px solid var(--rule);
+  padding-top: 14px;
+}
+
+.slices h2 {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.slice-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.slice {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 12px;
+  align-items: center;
+  min-height: 56px;
+  padding: 10px 14px;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.slice-name {
+  font-weight: 600;
+}
+
+.slice-range {
+  grid-column: 1;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.badge {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  border: 1px solid var(--rule);
+  white-space: nowrap;
+}
+
+.badge[data-state='recorded'] {
+  color: #fff;
+  background: var(--ok);
+  border-color: var(--ok);
 }
 
 @media (prefers-reduced-motion: no-preference) {
