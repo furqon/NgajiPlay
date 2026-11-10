@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ngajiPlay · Spike A recorder probe</title>
+<style>
+  body{margin:0;font:15px/1.5 system-ui,sans-serif;background:#fbf8f1;color:#1c1c1c}
+  .wrap{max-width:680px;margin:0 auto;padding:20px}
+  h1{font-size:17px;margin:0 0 4px}
+  p.sub{margin:0 0 16px;color:#7a6a4c;font-size:13px}
+  button{font:inherit;padding:10px 16px;border-radius:10px;border:1px solid #b9a882;background:#fff;min-height:44px}
+  button[disabled]{opacity:.5}
+  pre{background:#141414;color:#d8f0c8;padding:12px;border-radius:10px;overflow:auto;font-size:12px;white-space:pre-wrap;word-break:break-word}
+  .warn{background:#fff3d6;border:1px solid #e6c07a;padding:10px;border-radius:8px;font-size:13px;margin:12px 0}
+  .warn code{background:#fffdf7;padding:1px 4px;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Spike A · MediaRecorder probe</h1>
+  <p class="sub">Records twice, then reports the real codec, measured bitrate, channels and file container. Run on each target phone.</p>
+  <div class="warn">Needs a secure context: <code>https://</code> or <code>localhost</code>. On a plain LAN IP the microphone is blocked.</div>
+  <button id="run">Run test (2 × 5 s)</button>
+  <button id="copy">Copy results</button>
+  <pre id="out">idle</pre>
+</div>
+<script>
+// Shown in the support matrix; note bare "audio/mp4" is NOT in the recording
+// preference list: Chromium answers it with Opus-in-MP4, not AAC (REQ §8.3).
+const MATRIX = [
+  'audio/mp4;codecs=mp4a.40.2',
+  'audio/mp4',
+  'audio/webm;codecs=opus',
+  'audio/webm',
+  'audio/ogg;codecs=opus',
+  'audio/mpeg'
+];
+
+// Codec-exact, in preference order.
+const PREFERENCE = [
+  'audio/mp4;codecs=mp4a.40.2',
+  'audio/webm;codecs=opus',
+  'audio/webm'
+];
+
+function extensionFor(mime) {
+  const m = (mime || '').toLowerCase();
+  if (m.includes('mp4a')) return '.m4a';
+  if (m.includes('mp4')) return '.mp4';   // e.g. Opus inside MP4
+  if (m.includes('webm')) return '.webm';
+  if (m.includes('ogg')) return '.ogg';
+  return '(unknown)';
+}
+
+async function record(seconds, bitrate) {
+  const mime = PREFERENCE.find(t => MediaRecorder.isTypeSupported(t));
+  if (!mime) throw new Error('no supported audio mime type from PREFERENCE');
+
+  const stream = await navigator.mediaDevices.getUserMedia({
+    audio: {
+      channelCount: 1,
+      echoCancellation: false,
+      noiseSuppression: false,
+      autoGainControl: false
+    }
+  });
+  const track = stream.getAudioTracks()[0];
+  const settings = track.getSettings ? track.getSettings() : {};
+
+  const opts = { mimeType: mime };
+  if (bitrate) opts.audioBitsPerSecond = bitrate;
+  const rec = new MediaRecorder(stream, opts);
+  const chunks = [];
+  rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+  const stopped = new Promise(r => { rec.onstop = r; });
+  rec.start(250);
+  await new Promise(r => setTimeout(r, seconds * 1000));
+  rec.stop();
+  await stopped;
+  stream.getTracks().forEach(t => t.stop());
+
+  const blob = new Blob(chunks, { type: rec.mimeType || mime });
+  const buf = await blob.arrayBuffer();
+  const probe = new TextDecoder('latin1').decode(new Uint8Array(buf));
+
+  let decoded = null;
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    const ctx = new Ctx();
+    const audio = await ctx.decodeAudioData(buf.slice(0));
+    decoded = { sampleRate: audio.sampleRate, channels: audio.numberOfChannels, durationSec: +audio.duration.toFixed(3) };
+    await ctx.close();
+  } catch (e) {
+    decoded = { error: String((e && e.message) || e) };
+  }
+
+  const duration = (decoded && decoded.durationSec) || seconds;
+  return {
+    requestedBitrate: bitrate || 'browser default',
+    recorderMimeType: rec.mimeType,
+    fileExtension: extensionFor(rec.mimeType),
+    reportedAudioBitsPerSecond: rec.audioBitsPerSecond,
+    bytes: blob.size,
+    seconds: +duration.toFixed(3),
+    measuredKbps: Math.round((blob.size * 8) / duration / 1000),
+    fragmentedMp4: probe.includes('mvex'),
+    aesOpusInMp4: /mp4/i.test(rec.mimeType || '') && !/mp4a/i.test(rec.mimeType || ''),
+    trackSettings: {
+      sampleRate: settings.sampleRate,
+      channelCount: settings.channelCount,
+      echoCancellation: settings.echoCancellation,
+      noiseSuppression: settings.noiseSuppression,
+      autoGainControl: settings.autoGainControl
+    },
+    decoded
+  };
+}
+
+async function runTest() {
+  const out = { ua: navigator.userAgent, secureContext: window.isSecureContext };
+  out.support = Object.fromEntries(MATRIX.map(t => [t, MediaRecorder.isTypeSupported(t)]));
+  try { out.at96k = await record(5, 96000); } catch (e) { out.at96k = { error: String((e && e.message) || e) }; }
+  try { out.atDefault = await record(5, 0); } catch (e) { out.atDefault = { error: String((e && e.message) || e) }; }
+  return out;
+}
+
+const outEl = document.getElementById('out');
+const runBtn = document.getElementById('run');
+
+runBtn.onclick = async () => {
+  runBtn.disabled = true;
+  outEl.textContent = 'recording 2 × 5 s…';
+  try {
+    const res = await runTest();
+    outEl.textContent = JSON.stringify(res, null, 2);
+    window.__spikeA = res;
+  } catch (e) {
+    outEl.textContent = 'ERROR ' + ((e && e.stack) || e);
+  } finally {
+    runBtn.disabled = false;
+  }
+};
+
+document.getElementById('copy').onclick = async () => {
+  try {
+    await navigator.clipboard.writeText(outEl.textContent);
+    document.getElementById('copy').textContent = 'Copied';
+  } catch { /* clipboard unavailable */ }
+};
+
+if (new URLSearchParams(location.search).get('auto') === '1') runBtn.click();
+window.runTest = runTest;
+</script>
+</body>
+</html>
