@@ -1,0 +1,32 @@
+{
+  "name": "ngajipay",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Record a child's Quran recitation per surah slice and replay it on the Madani page.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node scripts/check-size.mjs",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.sw.json",
+    "lint": "eslint .",
+    "icons": "node scripts/gen-icons.mjs",
+    "pretest:e2e": "npm run build",
+    "test:e2e": "playwright test",
+    "verify": "npm run typecheck && npm run lint && npm run test:e2e"
+  },
+  "dependencies": {
+    "workbox-precaching": "^7.4.1",
+    "workbox-routing": "^7.4.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.0",
+    "@types/node": "^26.6.6",
+    "eslint": "^10.14.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.2",
+    "vite": "^8.3.7",
+    "vite-plugin-pwa": "^2.0.0"
+  }
+}

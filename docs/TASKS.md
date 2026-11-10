@@ -16,11 +16,13 @@ Retire the three unknowns that could invalidate later phases, then stand up an e
 - [ ] Run `docs/spikes/recorder-probe.html` on both phones and paste the JSON into REQ §8.3, then confirm or correct the §4 audio rows.
 - [x] **Spike B — Madani page mapping. DONE 2026-11-10.** Source chosen and validated: Tanzil text + `quran-data.xml`, 604/604 pages verified against an independent index, hashes pinned in REQ §8. Remaining work is only to re-run the check if the source or version ever changes. (FR-1.7)
 - [x] **Spike C — Arabic text rendering. DONE 2026-11-10.** Real render of Madani pages at 390px in headless Edge; font chosen as **Amiri Quran (OFL 1.1)** after measuring KFGQPC Hafs too; subset to 37 KB with identical shaping; dense page ≈1.3 screens at 26px. Details in REQ §8.2. (NFR-1, NFR-6)
-- [ ] Confirm name and icon set (`ngajiPlay`).
-- [ ] Choose the stack and scaffold `src/` + `public/`; add lint, typecheck and build scripts.
-- [ ] Set up static hosting and deploy the empty shell to confirm HTTPS works.
+- [x] **Name and icons — DONE 2026-11-10.** Name confirmed as `ngajiPlay`; icon set generated from one vector mark (`npm run icons`): 192, 512, maskable 512 inside the Android safe zone, and a 180px Apple touch icon, all opaque on the theme green. Manifest is `public/manifest.webmanifest`, `display: standalone`.
+- [x] **Stack and scaffold — DONE 2026-11-10.** Vite + TypeScript, no UI framework, to stay inside NFR-1. `src/` for app code, `public/` for the manifest and icons; `typecheck` (app and service worker compiled separately), `lint` (ESLint 10 flat config), `build` (includes the size check) and `verify` scripts in place. Service worker is hand-written (`src/sw.ts`, precache only), so offline behaviour stays explicit.
+- [x] **Shell e2e — DONE 2026-11-10.** Playwright against the production preview build: secure context, document metadata, manifest validity, every icon's real PNG dimensions against its declared `sizes`, service worker control + precache contents, offline reload with the network switched off, and a 390px layout with no sideways scroll. 5/5 passing.
+- [x] **Size measured — 27.0 KB gzipped** for the whole shell (budget 1.5 MB, NFR-1). `npm run build` fails the build if either budget is exceeded.
+- [ ] **Static hosting and deploy.** `vercel.json` (build command, `outputDirectory`, no-cache headers for `sw.js` and the manifest, immutable hashed assets) and the README deploy steps are ready. The deploy itself needs a Vercel token or an authenticated `vercel login` on this machine, neither of which exists yet.
 
-**Done when** Spike A has on-device numbers from both phones, the empty shell is deployed, and it is installable.
+**Done when** Spike A has on-device numbers from both phones, the empty shell is deployed, and it is installable. Locally: installability and offline reload are verified against the preview build; HTTPS deploy and on-device install are the two remaining checks.
 
 ## Phase 1 — Data and storage foundation
 

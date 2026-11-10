@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ngajiPlay</title>
+    <meta name="description" content="Rekam bacaan Al-Qur'an anak per surah, lalu putar ulang sambil melihat halaman Madani." />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="theme-color" content="#0e4a3c" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="ngajiPlay" />
+  </head>
+  <body>
+    <main class="shell">
+      <div class="mark" aria-hidden="true">
+        <svg viewBox="0 0 512 512" width="64" height="64" role="presentation">
+          <circle cx="256" cy="256" r="176" fill="currentColor" />
+          <path d="M218 176 L346 256 L218 336 Z" fill="#0e4a3c" stroke="#0e4a3c" stroke-width="26" stroke-linejoin="round" />
+        </svg>
+      </div>
+      <h1>ngajiPlay</h1>
+      <p class="tagline" data-testid="tagline"></p>
+      <p class="status" data-testid="status" data-state="booting">
+        <span class="dot" aria-hidden="true"></span>
+        <span data-testid="status-text"></span>
+      </p>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
