@@ -344,16 +344,39 @@ h1 {
   gap: 8px;
 }
 
+/* The whole row is the record button, so the touch target is the card (NFR-6). */
 .slice {
+  display: block;
+}
+
+.slice-record {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 2px 12px;
   align-items: center;
+  width: 100%;
   min-height: 56px;
   padding: 10px 14px;
   border: 1px solid var(--rule);
   border-radius: 12px;
   background: #fff;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.slice-record:hover {
+  border-color: #cfc6ae;
+}
+
+.slice-record:active {
+  background: #f6f1e6;
+}
+
+.slice-record:focus-visible {
+  outline: 3px solid var(--deep);
+  outline-offset: 2px;
 }
 
 .slice-name {
@@ -381,6 +404,107 @@ h1 {
   color: #fff;
   background: var(--ok);
   border-color: var(--ok);
+}
+
+/* --- recorder ----------------------------------------------------------- */
+
+.recorder {
+  margin: 16px 0 20px;
+  padding: 14px;
+  border: 1px solid #cfe0d6;
+  border-inline-start: 4px solid var(--deep);
+  border-radius: 14px;
+  background: #f4f8f5;
+}
+
+.recorder-title {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+/* The slice text inside the panel keeps the measured typography (FR-2.5). */
+.mushaf-slice {
+  padding: 10px 12px;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.recorder-timer {
+  margin: 10px 0 0;
+  color: var(--deep);
+  font-size: 2rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.recorder-status {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.recorder-warning {
+  margin: 8px 0 0;
+  color: var(--wait);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.recorder-error {
+  margin: 8px 0 0;
+  color: #a3352a;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.recorder-body {
+  margin-top: 10px;
+}
+
+.recorder-audio {
+  width: 100%;
+}
+
+.recorder-meta {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.recorder-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.recorder-action {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.recorder-action-primary {
+  border: 1px solid var(--deep);
+  background: var(--deep);
+  color: #fbf8f1;
+}
+
+.recorder-action-ghost {
+  border: 1px solid #bfd3c7;
+  background: transparent;
+  color: var(--deep);
+}
+
+.recorder-action:focus-visible {
+  outline: 3px solid var(--deep);
+  outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: no-preference) {

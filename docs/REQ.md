@@ -120,7 +120,7 @@ The playlist is derived, never stored: clips sorted by page, surah, ayah start.
 
 ## 7. Non-functional requirements
 
-- **NFR-1** Initial load ≤ 1.5 MB gzipped including the Quran font. Measured after Phase 1: 277 KB gzipped text + 52 KB subset font ≈ 330 KB, and the whole built shell comes to **362 KB gzipped** after the Phase 2 page view, about 24% of the budget. Bundling everything fits, so per-juz lazy loading is optional, not required.
+- **NFR-1** Initial load ≤ 1.5 MB gzipped including the Quran font. Measured after Phase 1: 277 KB gzipped text + 52 KB subset font ≈ 330 KB, and the whole built shell comes to **367 KB gzipped** after the Phase 3 recorder, about 24% of the budget. Bundling everything fits, so per-juz lazy loading is optional, not required.
 - **NFR-2** Install size ≤ 5 MB excluding recordings.
 - **NFR-3** No network needed after first load for pages already visited.
 - **NFR-4** Recordings never leave the device except when the user exports them.
@@ -224,7 +224,7 @@ Heights are for Amiri Quran; KFGQPC Hafs was identical on every page except p2 (
 
 ### 8.3 Recorder (Spike A, partial)
 
-**Status: desktop Chromium measured, phones still unverified.** The two numbers in §4 are provisional until `docs/spikes/recorder-probe.html` is run on Android Chrome and iOS Safari.
+**Status: desktop Chromium measured, phones still unverified.** The recorder now implements this section (Phase 3): AAC-first negotiation, the extension rules in trap 1, the real channel count in trap 3, and a pre-save size check. Nothing here has been re-measured on a phone. The two numbers in §4 are provisional until `docs/spikes/recorder-probe.html` is run on Android Chrome and iOS Safari.
 
 **Method.** The probe was driven in headless Edge 157 over the DevTools protocol with a fake capture device: real `getUserMedia` → `MediaRecorder` → `decodeAudioData`, so codec negotiation, container and bitrate are genuine; the audio content is synthetic.
 

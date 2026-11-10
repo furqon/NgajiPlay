@@ -1,11 +1,11 @@
-import { splitBasmala, shouldSplitBasmala } from '../data/basmala';
-import { ayahText, loadQuran, pageCount, slicesOnPage, surah } from '../data/quran';
+import { loadQuran, pageCount, slicesOnPage, surah } from '../data/quran';
 import { pageHref } from '../router';
 import { clipsOnPage } from '../store/db';
 import { fill, t } from '../strings';
-import type { PageSlice, QuranData } from '../types';
+import type { Clip, QuranData } from '../types';
 import { el } from './dom';
-import { ayahMedallion } from './format';
+import { sliceNodes } from './mushaf';
+import { openRecorder } from './record-panel';
 
 /**
  * Renders one Madani page (FR-1.4) plus its recordable slices (FR-1.5).
@@ -31,7 +31,7 @@ export async function renderPage(
       backLink(),
       pager(pageNumber),
       mushaf(data, pageNumber),
-      sliceList(data, pageNumber, isCurrent),
+      sliceList(target, data, pageNumber, isCurrent),
     );
   } catch {
     if (!isCurrent()) return;
@@ -101,105 +101,88 @@ function mushaf(data: QuranData, pageNumber: number): HTMLElement {
   });
 
   for (const slice of slicesOnPage(data, pageNumber)) {
-    article.append(...sliceText(data, slice));
+    article.append(...sliceNodes(data, slice));
   }
 
   return article;
 }
 
 /**
- * One slice as it sits on the page: a surah header band when the surah starts
- * here, the basmala split off ayah 1, then every ayah inline so the paragraph
- * justifies the way a printed page does.
+ * The recordable slices. Each row is one button, so the whole row is the touch
+ * target (NFR-6) and tapping it opens the recorder for that slice (FR-2.2).
  */
-function sliceText(data: QuranData, slice: PageSlice): HTMLElement[] {
-  const nodes: HTMLElement[] = [];
-
-  if (slice.ayahStart === 1) nodes.push(surahHeader(data, slice.surah));
-
-  const ayahs: HTMLElement[] = [];
-  for (let ayah = slice.ayahStart; ayah <= slice.ayahEnd; ayah += 1) {
-    let text = ayahText(data, slice.surah, ayah);
-
-    // The basmala is stored inside 1:1, so it is separated at render time only;
-    // the data stays verbatim (REQ §8.1).
-    if (ayah === 1 && shouldSplitBasmala(slice.surah, 1)) {
-      const split = splitBasmala(text);
-      if (split.basmala) {
-        nodes.push(el('p', { class: 'basmala', attrs: { 'data-testid': 'basmala' }, text: split.basmala }));
-        text = split.body;
-      }
-    }
-
-    ayahs.push(ayahSpan(slice.surah, ayah, text));
-  }
-
-  const paragraph = el('p', { class: 'ayahs' });
-  ayahs.forEach((node) => {
-    // A literal space, not CSS margin: justification has to see the gap.
-    if (paragraph.childNodes.length > 0) paragraph.append(' ');
-    paragraph.append(node);
-  });
-  nodes.push(paragraph);
-
-  return nodes;
-}
-
-function ayahSpan(surahNumber: number, ayah: number, text: string): HTMLElement {
-  return el(
-    'span',
-    {
-      class: 'ayah',
-      attrs: {
-        id: `a-${surahNumber}-${ayah}`,
-        'data-surah': surahNumber,
-        'data-ayah': ayah,
-      },
-    },
-    text,
-    el('span', {
-      class: 'ayah-mark',
-      attrs: { 'aria-hidden': 'true' },
-      text: ayahMedallion(ayah),
-    }),
-  );
-}
-
-function surahHeader(data: QuranData, number: number): HTMLElement {
-  const entry = surah(data, number);
-
-  return el(
-    'header',
-    { class: 'surah-header', attrs: { 'data-testid': 'surah-header', 'data-surah': number } },
-    el('p', { class: 'surah-name-ar', text: entry.nameAr }),
-    el('p', {
-      class: 'surah-name-latin',
-      attrs: { dir: 'ltr' },
-      text: `${fill(t('surahStartLabel'), { number })} · ${entry.nameId}`,
-    }),
-  );
-}
-
-function sliceList(data: QuranData, pageNumber: number, isCurrent: () => boolean): HTMLElement {
+function sliceList(
+  host: HTMLElement,
+  data: QuranData,
+  pageNumber: number,
+  isCurrent: () => boolean,
+): HTMLElement {
   const list = el('ul', { class: 'slice-list', attrs: { 'data-testid': 'slice-list' } });
+  const section = el(
+    'section',
+    { class: 'slices' },
+    el('h2', { text: t('slicesHeading') }),
+    list,
+  );
+  const rows = new Map<number, HTMLElement>();
+
+  const setRecorded = (surahNumber: number, recorded: boolean): void => {
+    const row = rows.get(surahNumber);
+    if (!row) return;
+    row.dataset.recorded = String(recorded);
+    const badge = row.querySelector<HTMLElement>('.badge');
+    if (badge) {
+      badge.dataset.state = recorded ? 'recorded' : 'empty';
+      badge.textContent = recorded ? t('recorded') : t('notRecorded');
+    }
+  };
 
   for (const slice of slicesOnPage(data, pageNumber)) {
-    list.append(
-      el(
-        'li',
-        {
-          class: 'slice',
-          attrs: { 'data-testid': 'slice', 'data-surah': slice.surah, 'data-recorded': 'false' },
+    const name = surah(data, slice.surah).nameId;
+    const button = el(
+      'button',
+      {
+        class: 'slice-record',
+        attrs: {
+          type: 'button',
+          'data-testid': 'record',
+          'aria-label': fill(t('recordSliceLabel'), {
+            surah: name,
+            from: slice.ayahStart,
+            to: slice.ayahEnd,
+          }),
         },
-        el('span', { class: 'slice-name', text: surah(data, slice.surah).nameId }),
-        el('span', { class: 'slice-range', text: fill(t('sliceAyat'), { from: slice.ayahStart, to: slice.ayahEnd }) }),
-        el('span', {
-          class: 'badge',
-          attrs: { 'data-state': 'empty' },
-          text: t('notRecorded'),
-        }),
-      ),
+      },
+      el('span', { class: 'slice-name', text: name }),
+      el('span', {
+        class: 'slice-range',
+        text: fill(t('sliceAyat'), { from: slice.ayahStart, to: slice.ayahEnd }),
+      }),
+      el('span', { class: 'badge', attrs: { 'data-state': 'empty' }, text: t('notRecorded') }),
     );
+
+    const row = el(
+      'li',
+      {
+        class: 'slice',
+        attrs: { 'data-testid': 'slice', 'data-surah': slice.surah, 'data-recorded': 'false' },
+      },
+      button,
+    );
+
+    button.addEventListener('click', () => {
+      openRecorder({
+        host,
+        mount: section,
+        data,
+        page: pageNumber,
+        slice,
+        onSaved: (clip: Clip) => setRecorded(clip.surah, true),
+      });
+    });
+
+    rows.set(slice.surah, row);
+    list.append(row);
   }
 
   // The list paints immediately; recorded state arrives from IndexedDB after.
@@ -207,15 +190,8 @@ function sliceList(data: QuranData, pageNumber: number, isCurrent: () => boolean
     .then((clips) => {
       if (!isCurrent()) return;
       const recorded = new Set(clips.map((clip) => clip.surah));
-
-      for (const row of list.querySelectorAll<HTMLElement>('[data-testid="slice"]')) {
-        const hasClip = recorded.has(Number(row.dataset.surah));
-        row.dataset.recorded = String(hasClip);
-        const badge = row.querySelector<HTMLElement>('.badge');
-        if (badge) {
-          badge.dataset.state = hasClip ? 'recorded' : 'empty';
-          badge.textContent = hasClip ? t('recorded') : t('notRecorded');
-        }
+      for (const surahNumber of rows.keys()) {
+        if (recorded.has(surahNumber)) setRecorded(surahNumber, true);
       }
     })
     .catch(() => {
@@ -223,10 +199,5 @@ function sliceList(data: QuranData, pageNumber: number, isCurrent: () => boolean
       // destructively; Phase 7 adds the designed storage-error state.
     });
 
-  return el(
-    'section',
-    { class: 'slices' },
-    el('h2', { text: t('slicesHeading') }),
-    list,
-  );
+  return section;
 }

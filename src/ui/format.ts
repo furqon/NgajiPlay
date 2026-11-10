@@ -12,3 +12,16 @@ export function arabicDigits(value: number | string): string {
 export function ayahMedallion(ayah: number): string {
   return `\u06DD${arabicDigits(ayah)}`;
 }
+
+/** `0:04`, `9:59` — minutes and padded seconds, so the digits do not jump. */
+export function formatDuration(ms: number): string {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
+
+/** Rounded up, so a 400-byte clip never reads "0 KB". */
+export function formatKilobytes(bytes: number): string {
+  return String(Math.max(1, Math.ceil(bytes / 1024)));
+}

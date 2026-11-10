@@ -15,13 +15,26 @@ export default defineConfig({
   workers: 1,
   forbidOnly: Boolean(process.env.CI),
   reporter: [['list']],
-  use: { channel, trace: 'retain-on-failure' },
+  use: {
+    channel,
+    trace: 'retain-on-failure',
+    permissions: ['microphone'],
+    launchOptions: {
+      // Chromium's fake capture device is real enough to exercise getUserMedia,
+      // MediaRecorder, IndexedDB and decoding; headless has no microphone.
+      args: [
+        '--use-fake-device-for-media-stream',
+        '--use-fake-ui-for-media-stream',
+        '--autoplay-policy=no-user-gesture-required',
+      ],
+    },
+  },
   projects: [
     // The shipped build: manifest, service worker, offline reload.
     { name: 'shell', testMatch: /shell\.spec\.ts/, use: { baseURL: previewURL } },
     // The dev server: source modules can be imported into the page, so real
     // IndexedDB and real data files are exercised without duplicating logic.
-    { name: 'data', testMatch: /(data|ui)\.spec\.ts/, use: { baseURL: devURL } },
+    { name: 'data', testMatch: /(data|ui|record)\.spec\.ts/, use: { baseURL: devURL } },
   ],
   webServer: [
     {

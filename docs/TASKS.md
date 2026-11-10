@@ -54,19 +54,20 @@ Retire the three unknowns that could invalidate later phases, then stand up an e
 
 ## Phase 3 — Recording
 
-- [ ] Recorder service: codec-exact preference (`mp4a.40.2` then `webm;codecs=opus`, never bare `audio/mp4`), request mono + 96 kbps, full MediaRecorder lifecycle. (FR-2.4, REQ §8.3)
-- [ ] Extension mapping from the reported codec: `mp4a` → `.m4a`, Opus-in-MP4 → `.mp4`, WebM → `.webm`; unit-test the mapping. (FR-3.1)
-- [ ] Record the real `track.getSettings()` channel count with each clip, so size estimates match reality. (FR-2.7)
-- [ ] Microphone permission flow with denial recovery. (FR-2.1)
-- [ ] Slice-bound record/stop with the slice's ayah text kept visible. (FR-2.2, FR-2.5)
-- [ ] Discard/retake and preview before saving. (FR-2.3)
-- [ ] Ten-minute cap with a warning before it. (FR-2.6)
-- [ ] Save to IndexedDB with metadata and the generated name. (FR-2.7, FR-3.1)
-- [ ] Pre-save quota check and refusal path. (FR-2.8)
-- [ ] Replace confirmation when the slice already has a clip. (FR-2.9)
-- [ ] Clear message when no supported codec exists. (NFR-8)
+- [x] **Recorder service — DONE 2026-11-10.** `src/recording/recorder.ts`: codec-exact preference (`mp4a.40.2` then `webm;codecs=opus`, never bare `audio/mp4`), mono + 96 kbps requested with echo cancellation, noise suppression and AGC off, and a full start/stop/cancel lifecycle that releases the microphone on every exit path. (FR-2.4, REQ §8.3)
+- [x] **Extension mapping — DONE 2026-11-10.** `src/recording/clip.ts`: `mp4a` → `.m4a`, Opus-in-MP4 and bare MP4 → `.mp4`, WebM → `.webm`, Ogg → `.ogg`, anything unknown → `.bin` rather than a lie. Unit-tested, including the Chromium bare-`audio/mp4` trap. (FR-3.1)
+- [x] **Real channel count — DONE 2026-11-10.** Taken from `track.getSettings().channelCount` at start and stored on the clip; the unit test proves a device that opens stereo is recorded as 2 even though mono was requested. (FR-2.7)
+- [x] **Microphone permission — DONE 2026-11-10.** One tap starts the request; `NotAllowedError`/`SecurityError` → the "allow the microphone for this site" message with a retry, `NotFoundError` → the no-microphone message, anything else → a generic failure. Both paths covered in the browser suite. (FR-2.1)
+- [x] **Slice-bound capture — DONE 2026-11-10.** The whole slice row is the record button (≥56px), so the slice is fixed before any audio exists, and the recorder panel renders that slice through the same `sliceNodes()` as the page, keeping the measured typography and the ayah text in view. (FR-2.2, FR-2.5)
+- [x] **Preview, discard and retake — DONE 2026-11-10.** Stop renders an `<audio controls>` preview with duration and size, plus Save / Record again / Discard. Object URLs are revoked on every exit, and navigating away closes the panel and releases the microphone. (FR-2.3)
+- [x] **Ten-minute cap — DONE 2026-11-10.** Warns at 9:00, stops itself at 10:00 and keeps the capture for saving with an explanation. Verified with fake timers in unit tests (the 10-minute path is not waited out in a browser). (FR-2.6)
+- [x] **Save with metadata and generated name — DONE 2026-11-10.** Keyed `${page}:${surah}`, so one clip per slice; name is `p042-s001-al-fatihah-a001-007.<ext>` from the real codec. (FR-2.7, FR-3.1)
+- [x] **Pre-save quota check — DONE 2026-11-10.** `ensureSpace()` runs before the write; a refusal shows the needed/available megabytes instead of a half-written clip, and a quota error from IndexedDB itself is caught by the same handler. (FR-2.8)
+- [x] **Replace confirmation — DONE 2026-11-10.** An existing clip on the slice turns Save into a confirmation step; Batal returns to the preview and the stored clip stays untouched. Asserted by the browser test. (FR-2.9)
+- [x] **Unsupported codec message — DONE 2026-11-10.** Checked before the microphone is touched, so a browser that cannot save audio never asks for permission; no retry button, because retrying cannot help. (NFR-8)
+- [x] **Checks — DONE 2026-11-10.** 55 unit tests (12 new: codec/extension/naming, recorder lifecycle, permission mapping, cap timers) and 22 browser tests (5 new: full record → save → reload → decode → play, discard, replace confirmation, denied microphone, unsupported codec). Whole build **366.7 KB gzipped**.
 
-**Done when** a 30-second clip records, saves, survives a reload and plays back on both target browsers, and the stored file extension matches the recorded codec.
+**Done when** a 30-second clip records, saves, survives a reload and plays back on both target browsers, and the stored file extension matches the recorded codec. **Desktop Edge ✅** (30 s capture run once with `LONG_RECORDING=1`; duration ≥ 29 s, decoded > 29 s, name and extension match the reported codec). **Android Chrome and iOS Safari ⏳** — same blockers as Phase 0: no HTTPS deploy and no device attached. The real capture is Chromium's fake device, so microphone quality and the audio format each phone actually negotiates are still unmeasured.
 
 ## Phase 4 — Library management
 

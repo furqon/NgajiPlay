@@ -7,8 +7,9 @@ Spec: [docs/REQ.md](docs/REQ.md) · Plan: [docs/TASKS.md](docs/TASKS.md)
 
 ## Status
 
-Phase 2 — the installable shell, the Madani data layer, and the search + page view
-work. Recording, the library and playback are still ahead (Phases 3–6).
+Phase 3 — the installable shell, the Madani data layer, search + page view, and
+recording per surah slice. The library, playback and repeat modes are still
+ahead (Phases 4–6).
 
 ## Commands
 
@@ -20,7 +21,8 @@ npm run preview    # serve the built shell
 npm run typecheck  # tsc, app and service worker separately
 npm run lint
 npm run test:unit  # Vitest: Quran data, basmala split, IndexedDB, quota, search
-npm run test:e2e   # Playwright: built shell, real browser data, search and page view
+npm run test:e2e   # Playwright: shell, real browser data, search/page view, real recording
+LONG_RECORDING=1 npx playwright test -g "thirty-second"   # the real 30 s capture
 npm run verify     # typecheck + lint + unit + e2e
 npm run icons      # regenerate public/icons from the vector mark
 ```

@@ -2,6 +2,7 @@ import './styles.css';
 import { parseRoute, type Route } from './router';
 import { currentLanguage, fill, t } from './strings';
 import { renderPage } from './ui/page-view';
+import { closeRecorder } from './ui/record-panel';
 import { renderSearch } from './ui/search-view';
 
 const view = document.querySelector<HTMLElement>('#view');
@@ -27,6 +28,9 @@ async function render(route: Route): Promise<void> {
   document.title =
     route.name === 'page' ? fill(t('pageTitle'), { page: route.page }) : 'ngajiPlay';
   window.scrollTo(0, 0);
+  // A recording must not outlive the view that shows it: the microphone would
+  // stay open and the timer would keep running off-screen.
+  closeRecorder();
   view.replaceChildren();
 
   if (route.name === 'search') {
