@@ -1,3 +1,12 @@
+@font-face {
+  font-family: 'Amiri Quran';
+  src: url('/fonts/amiri-quran-subset.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0020, U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+}
+
 :root {
   --ink: #1f2421;
   --muted: #6b6a60;
@@ -5,6 +14,7 @@
   --deep: #0e4a3c;
   --ok: #2f7d5d;
   --wait: #b07a1e;
+  --quran: 'Amiri Quran', 'Traditional Arabic', serif;
   color-scheme: light;
 }
 

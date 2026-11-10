@@ -26,17 +26,17 @@ Retire the three unknowns that could invalidate later phases, then stand up an e
 
 ## Phase 1 — Data and storage foundation
 
-- [ ] Vendor both Tanzil files per REQ §8.1: fetch at build time, verify the pinned SHA-256, keep the `quran-data.xml` and its copyright block in the repo. (FR-1.7)
-- [ ] Vendor the Amiri Quran woff2 (OFL) plus its `OFL.txt`; subset to the 62 Quran codepoints at build time with `--layout-features=*` and assert shaping output is unchanged. (NFR-1, FR-7.5, REQ §8.2)
-- [ ] Build step that emits Quran data: surah list, ayah text, page → slice mapping. Bundling the whole text (280 KB gz) is acceptable per NFR-1, so only split per juz if initial load actually exceeds budget. (FR-1.2, NFR-1)
-- [ ] Basmala split helper: diacritic-insensitive prefix match for ayah 1 of surahs 2–114 except 9; no split for 1:1 or 27:30; render-time only, stored text untouched. (FR-1.4, REQ §8)
-- [ ] Ship the Tanzil copyright block with the data and expose it to the About screen. (FR-7.5)
-- [ ] Types and data-access module: page by number, slices on a page, ayahs for a page, surah lookup. (REQ §6)
-- [ ] IndexedDB layer with `clips` and `settings` stores plus a migration hook. (FR-2.7, FR-5.4)
-- [ ] Storage helpers: `navigator.storage.estimate()`, `persist()`, typed quota-exceeded error. (FR-2.8, FR-4.5, FR-4.6)
-- [ ] Check: store and re-read a dummy Blob after reload; verify 5 spot-checked pages return the expected ayahs.
+- [x] **Vendor the Tanzil files — DONE 2026-11-10.** Both files committed in `assets/quran/` with a `SOURCES.json` pin (URL, bytes, SHA-256). `scripts/build-quran-data.mjs` re-verifies both hashes on every build and aborts on any change. **The text was re-pinned:** the original `txt-2` file can no longer be produced by Tanzil's endpoint, which parses parameter presence rather than values; the metadata still matches its original pin byte-for-byte. Recorded in REQ §8.1. (FR-1.7)
+- [x] **Vendor the font — DONE 2026-11-10.** Amiri Quran TTF + `OFL.txt` in `assets/fonts/`, shipped with `public/fonts/OFL.txt`. `scripts/subset-font.py` produces the committed woff2 (52,316 B, 163 codepoints, `--layout-features=*`) and asserts shaping equality on **all 6,236 ayahs**. It found two real defects: uharfbuzz silently returns glyph 0 for woff2 (must decompress first), and dropping U+0622 detaches the maddah from `ا`. (NFR-1, FR-7.5, REQ §8.2)
+- [x] **Data build step — DONE 2026-11-10.** `public/quran.json` (generated, gitignored): 114 surahs with ayah text, 604 pages with slices, and the verbatim copyright block. Validated in-script: 6,236 ayahs assigned exactly once, contiguous pages 1–604, spot checks of p1, p2, p3, p604, plus 1:1 and 114:6. 277 KB gzipped. (FR-1.2, NFR-1)
+- [x] **Basmala split — DONE 2026-11-10.** `src/data/basmala.ts`, diacritic-insensitive via NFD folding, no text mutation. Unit tests cover 1:1 (whole ayah is the basmala), 2:1, 9:1, 27:30, and all 112 prefixed surahs including 95 and 97. Two bugs found by the tests: NFC folding composed `ا`+`ٓ` on one side only, and the match ended before the basmala's trailing kasra so the separator check failed on every real ayah. (FR-1.4)
+- [x] **Types and data access — DONE 2026-11-10.** `src/types.ts` + `src/data/quran.ts`: page by number, slices on a page, ayahs for a page in mushaf order, surah lookup, surah search by number/Indonesian/English name, and range errors instead of `undefined`. (REQ §6, FR-1.2)
+- [x] **IndexedDB layer — DONE 2026-11-10.** `src/store/db.ts`: `clips` (keyed `${page}:${surah}` so one clip per slice, indexed by page and surah) and `settings`, with a versioned `migrate()` hook. (FR-2.7, FR-5.4)
+- [x] **Storage helpers — DONE 2026-11-10.** `src/store/storage.ts`: `estimate()`, `persist()`/`persisted()`, `ensureSpace()` raising a typed `StorageQuotaError`. (FR-2.8, FR-4.5, FR-4.6)
+- [x] **Circle back on the copyright block — DONE.** It lives in `quran.json` under `meta.copyright`, already asserted by a unit test; the About screen in Phase 7 reads it from there. (FR-7.5)
+- [x] **Checks — DONE 2026-11-10.** 32 unit tests (data, basmala, db, storage) and 3 browser tests: a dummy clip **and its Blob survive a real reload** in Edge, the served `quran.json` answers 5 spot-checked pages, and the font loads via `@font-face`. Built shell: 358 KB gzipped.
 
-**Done when** a dummy clip round-trips through IndexedDB across a reload, quota is readable, and spot-checked pages return correct text.
+**Done when** a dummy clip round-trips through IndexedDB across a reload, quota is readable, and spot-checked pages return correct text. ✅ Verified in a real browser (`tests/e2e/data.spec.ts`, run against the Vite dev server so the real modules are exercised).
 
 ## Phase 2 — Search and page view
 

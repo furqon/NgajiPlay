@@ -33,7 +33,7 @@ These are settled. Changing one invalidates downstream tasks — re-open it deli
 | **One clip per slice** | Re-recording a slice replaces the existing clip after confirmation. | No version history. Keeps library and playlist unambiguous. |
 | **Library** | One shared library, no profiles. | All clips in one list, identified by page/surah only. |
 | **Mushaf** | Madani, **604 pages**. | Page numbers and surah boundaries follow the Madani edition only. |
-| **Quran display** | Text rendered with **Amiri Quran** (OFL 1.1), self-hosted woff2, subset to the Quran's 62 codepoints (~37 KB). Shows the ayahs of the page. | Not a pixel-faithful page image. Chosen in Spike C: renders Tanzil's Uthmani text correctly, its licence permits bundling *and* subsetting, and it is half the size of KFGQPC Hafs. KFGQPC Hafs renders fine but its licence forbids modification (so no subsetting) and HarfBuzz removed it over licensing. See §8.2. |
+| **Quran display** | Text rendered with **Amiri Quran** (OFL 1.1), self-hosted woff2, subset to the codepoints the text uses plus the precomposed forms HarfBuzz substitutes (163 codepoints, 52 KB). Shows the ayahs of the page. | Not a pixel-faithful page image. Chosen in Spike C: renders Tanzil's Uthmani text correctly, its licence permits bundling *and* subsetting, and it is half the size of KFGQPC Hafs. KFGQPC Hafs renders fine but its licence forbids modification (so no subsetting) and HarfBuzz removed it over licensing. See §8.2. |
 | **Quran text + page mapping** | Tanzil Quran Text (Uthmani, v1.1) for the Arabic text plus Tanzil `quran-data.xml` for the Madani 604-page boundaries. Fetched once at build time, vendored, and pinned by SHA-256. | Licence: CC BY 3.0 — verbatim only (no character changes), the Tanzil Project must be credited with a link to tanzil.net, and the copyright block must ship with the data. Validated 604/604 pages against an independent Madani index; see §8. |
 | **Storage** | IndexedDB blobs on-device plus `navigator.storage.persist()`. | No restore after the user clears site data. Export is the manual backup path. |
 | **Repeat modes** | Off · repeat one · repeat all · repeat N times (presets 2, 3, 5, 10). | Covers memorisation practice. |
@@ -120,7 +120,7 @@ The playlist is derived, never stored: clips sorted by page, surah, ayah start.
 
 ## 7. Non-functional requirements
 
-- **NFR-1** Initial load ≤ 1.5 MB gzipped including the Quran font. Measured: 280 KB gzipped text + 37 KB subset font ≈ 320 KB, about 21% of the budget. Bundling everything fits, so per-juz lazy loading is optional, not required.
+- **NFR-1** Initial load ≤ 1.5 MB gzipped including the Quran font. Measured after Phase 1: 277 KB gzipped text + 52 KB subset font ≈ 330 KB, and the whole built shell comes to **358 KB gzipped**, about 23% of the budget. Bundling everything fits, so per-juz lazy loading is optional, not required.
 - **NFR-2** Install size ≤ 5 MB excluding recordings.
 - **NFR-3** No network needed after first load for pages already visited.
 - **NFR-4** Recordings never leave the device except when the user exports them.
@@ -139,8 +139,12 @@ The playlist is derived, never stored: clips sorted by page, surah, ayah start.
 
 | File | URL | Bytes | SHA-256 |
 |---|---|---|---|
-| Text | `https://tanzil.net/pub/download/index.php?quranType=uthmani&outType=txt-2&agree=true` | 1,370,878 | `bf4f57b968d03f4131c070b1e285da9be0e0a108a21c910e872801ca273312c8` |
+| Text | `https://tanzil.net/pub/download/index.php?quranType=uthmani&outType=txt&marks=true&sajdah=true&alef=true&tatweel=true&agree=true` | 1,359,946 | `829083f684ecb5c71853029ca1970946a12c2dc90528d6e0e3cd6dbc41204b7c` |
 | Metadata | `https://tanzil.net/res/text/metadata/quran-data.xml` | 77,234 | `8867c1d88191472adec9db694b3cd9f135b1a2ef580574d32cf888dcb22c5c7a` |
+
+These bytes are pinned in `assets/quran/SOURCES.json`; `scripts/build-quran-data.mjs` re-verifies both hashes on every build and refuses to emit data when either changes.
+
+**Re-pin note (Phase 1, 2026-11-10).** The text was originally pinned as `outType=txt-2`, 1,370,878 B, `bf4f57b…`. That file can no longer be produced: the download endpoint parses parameter *presence* rather than values, and the combinations tried (marks, sajdah, rub, alef, tatweel, laa, stanween, txt vs txt-2, GET vs POST) returned a different byte count every time. The row above is the download form's default state and is the file the app now ships. The metadata file still matches its original pin **byte-for-byte**, and page boundaries come only from that metadata, so the 604/604 page validation below is unaffected. Changing the text again is a deliberate re-pin, not a fetch.
 
 **What was verified**
 
@@ -157,7 +161,7 @@ The playlist is derived, never stored: clips sorted by page, surah, ayah start.
 - **27:30** contains the basmala *inside* the verse (Solomon's letter) and is not ayah 1, so never split it.
 - Separate the prefix at render time only; the stored text stays verbatim, which the licence requires.
 
-**Size.** 1.37 MB raw, 280 KB gzipped for the whole Quran — comfortably inside NFR-1.
+**Size.** 1.39 MB raw, 277 KB gzipped for the whole Quran — comfortably inside NFR-1.
 
 ### 8.2 Font (Spike C)
 
@@ -169,6 +173,7 @@ The playlist is derived, never stored: clips sorted by page, surah, ayah start.
 |---|---|---|
 | File size (woff2) | 87,760 B | 45,680 B |
 | Subset to 62 Quran codepoints | **not allowed** by licence | **36,876 B**, verified identical shaping |
+| Shipped subset (Phase 1) | — | **52,316 B**, 163 codepoints, shaping identical on all 6,236 ayahs |
 | Coverage of Quran text (62 codepoints) | 62/62 | 62/62 |
 | Coverage of Arabic surah names (36 codepoints) | all | all |
 | Digits (U+0660–0669), U+06DD ayah mark, Arabic comma | present | present |
@@ -189,7 +194,9 @@ Both fonts rendered the Tanzil text legibly in a real headless-Edge render; noth
 
 Heights are for Amiri Quran; KFGQPC Hafs was identical on every page except p2 (378px, 0.50 screens). A dense page needs about 1.3–1.4 screens of scrolling at 26px — readable without pinch-zoom, no need to shrink the Arabic. Below ~22px the text gets tight for a child.
 
-**Budget:** 36.9 KB font + 280 KB gzipped text ≈ 317 KB of the 1.5 MB initial-load budget (21%). Note woff2 is already compressed, so gzipping it gains nothing (36,876 → 36,909 B).
+**Phase 1 subset is 52,316 B, larger than the 36,876 B measured above.** The extra weight buys correctness: the font keeps precomposed forms the text never contains (U+0622 and friends) because HarfBuzz substitutes them in — `ا` + `ٓ` shapes as one glyph from U+0622, and without that codepoint the subset drops the ligature and renders a detached mark. Digits and the ayah brackets ride along. Verification now compares HarfBuzz positions for **every one of the 6,236 ayahs** (full TTF vs the decompressed subset), not a sample.
+
+**Budget:** 52.3 KB font + 277 KB gzipped text ≈ 330 KB of the 1.5 MB initial-load budget (22%). Note woff2 is already compressed, so gzipping it gains nothing.
 
 **Constraints this creates**
 

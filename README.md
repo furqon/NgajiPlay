@@ -18,12 +18,28 @@ npm run build      # production build + size budget check (REQ §7)
 npm run preview    # serve the built shell
 npm run typecheck  # tsc, app and service worker separately
 npm run lint
-npm run test:e2e   # builds, then runs Playwright against the preview server
+npm run test:unit  # Vitest: Quran data, basmala split, IndexedDB, quota
+npm run test:e2e   # Playwright: built shell + real browser data tests
+npm run verify     # typecheck + lint + unit + e2e
 npm run icons      # regenerate public/icons from the vector mark
 ```
 
 `npm run test:e2e` uses the installed Edge by default (`PW_CHANNEL=chromium` after
 `npx playwright install chromium` elsewhere).
+
+## Data
+
+`public/quran.json` is generated, not committed: `npm run build` and `npm run dev`
+regenerate it from the pinned files in `assets/quran/`, verifying both SHA-256 pins
+first. Page slices, surah text and the Tanzil copyright block all come from there.
+
+```bash
+node scripts/build-quran-data.mjs                                  # data only
+.venv/Scripts/python.exe scripts/subset-font.py                    # font subset (needs fonttools + brotli + uharfbuzz)
+```
+
+The font subset is committed because it needs Python; the data file is not because
+it is a pure function of the pinned sources.
 
 ## Stack
 

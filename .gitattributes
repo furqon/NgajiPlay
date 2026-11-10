@@ -1,0 +1,11 @@
+# Vendored sources are verified by SHA-256 at build time. Any line-ending
+# conversion would break the pin, so git must store and check out these bytes
+# exactly as downloaded.
+assets/quran/quran-uthmani.txt -text
+assets/quran/quran-data.xml -text
+assets/quran/SOURCES.json -text
+
+# Binaries: never mangle.
+*.woff2 binary
+*.ttf binary
+*.png binary

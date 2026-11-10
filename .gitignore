@@ -4,6 +4,13 @@ node_modules/
 # Build output
 dist/
 dist-ssr/
+# Generated from the pinned sources on every build
+public/quran.json
+
+# Python virtualenv and bytecode for the one-off font subsetting
+.venv/
+__pycache__/
+*.pyc
 
 # Test artifacts
 test-results/
