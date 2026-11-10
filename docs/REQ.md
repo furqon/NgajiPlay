@@ -194,6 +194,22 @@ Both fonts rendered the Tanzil text legibly in a real headless-Edge render; noth
 
 Heights are for Amiri Quran; KFGQPC Hafs was identical on every page except p2 (378px, 0.50 screens). A dense page needs about 1.3–1.4 screens of scrolling at 26px — readable without pinch-zoom, no need to shrink the Arabic. Below ~22px the text gets tight for a child.
 
+**Rendered check with the shipped subset (Phase 1, 2026-11-10).** Real pages 2, 42, 100 and 604 were painted at 390px wide, 3× DPR, in Edge, using the committed `amiri-quran-subset.woff2`, with ayah medallions (`۝` + Arabic-Indic digits) and surah header bands.
+
+| Setting | p2 | p42 | p100 | p604 | Verdict |
+|---|---|---|---|---|---|
+| 26px, line-height 2.0 | 0.60 screens | 1.46 | 1.46 | 1.14 | **chosen** |
+| 26px, line-height 1.7 | — | — | 1.25 | — | rejected |
+| 22px, line-height 2.0 | — | — | 1.03 | — | legible, smaller than needed |
+
+- **Line-height 2.0 is required, not decorative.** At 1.7 the maddah and the small high marks sit hard against the descenders of the line above; at 2.0 every mark has clear air. Line boxes measured exactly 52px apart at 26px and 44px at 22px — no rounding drift, no collapsed lines.
+- **Mark placement is correct**: harakat, shadda, sukun, maddah and the small high signs attach to the right letters, above and below, with no clipping and no drift to the wrong base.
+- **No missing glyphs**: every codepoint on those pages renders from the subset (the only glyphs whose advance matched the `.notdef` box were whitespace), and there is no horizontal overflow at 390px.
+- **Ayah medallions work**: `۝` encloses the Arabic-Indic ayah number cleanly, so no separate ornament asset is needed.
+- **Justification is safe**: `text-align: justify` with `direction: rtl` produced no torn words or oversized gaps on these pages.
+- **26px is the floor for a child**, not 22px. 22px stays legible but the marks become cramped.
+- Still unverified on a physical phone; this is a desktop renderer at phone width with the phone's DPR.
+
 **Phase 1 subset is 52,316 B, larger than the 36,876 B measured above.** The extra weight buys correctness: the font keeps precomposed forms the text never contains (U+0622 and friends) because HarfBuzz substitutes them in — `ا` + `ٓ` shapes as one glyph from U+0622, and without that codepoint the subset drops the ligature and renders a detached mark. Digits and the ayah brackets ride along. Verification now compares HarfBuzz positions for **every one of the 6,236 ayahs** (full TTF vs the decompressed subset), not a sample.
 
 **Budget:** 52.3 KB font + 277 KB gzipped text ≈ 330 KB of the 1.5 MB initial-load budget (22%). Note woff2 is already compressed, so gzipping it gains nothing.

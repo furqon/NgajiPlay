@@ -43,8 +43,9 @@ Retire the three unknowns that could invalidate later phases, then stand up an e
 - [ ] Page-number search with range validation. (FR-1.1)
 - [ ] Surah search by number and by both names. (FR-1.2)
 - [ ] Results list showing page number and the surahs on it. (FR-1.3)
-- [ ] Page view: ayahs in order with a header at every surah boundary. (FR-1.4)
+- [ ] Page view: ayahs in order with a header at every surah boundary. Render as **26px Amiri Quran, line-height 2.0, RTL, justified** — measured in REQ §8.2; at 1.7 the marks collide with the line above. (FR-1.4)
 - [ ] Slice list per page with recorded / not-recorded state. (FR-1.5)
+- [ ] Ayah medallions: `۝` + Arabic-Indic digits, verified to enclose digits cleanly in REQ §8.2 — no ornament asset needed.
 - [ ] Previous and next page navigation. (FR-1.6)
 - [ ] No-result and invalid-input states. (NFR-8)
 
