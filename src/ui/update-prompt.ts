@@ -45,10 +45,13 @@ export function watchForUpdates(registration: ServiceWorkerRegistration): void {
     });
   });
 
-  let reloading = false;
+  // Only a tap may reload. The first install also fires `controllerchange`
+  // (the worker claims the page), and reloading then would throw away whatever
+  // the listener was doing — including an open recording.
+  let reloadRequested = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (reloading) return;
-    reloading = true;
+    if (!reloadRequested) return;
+    reloadRequested = false;
     window.location.reload();
   });
 
@@ -58,6 +61,7 @@ export function watchForUpdates(registration: ServiceWorkerRegistration): void {
       window.location.reload();
       return;
     }
+    reloadRequested = true;
     waiting.postMessage('SKIP_WAITING');
   });
 

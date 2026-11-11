@@ -1,6 +1,7 @@
 @font-face {
   font-family: 'Amiri Quran';
-  src: url('/fonts/amiri-quran-subset.woff2') format('woff2');
+  /* Relative, so the font follows the build's base path on GitHub Pages. */
+  src: url('../fonts/amiri-quran-subset.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;

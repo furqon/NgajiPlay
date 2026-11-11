@@ -1,0 +1,60 @@
+name: pages
+
+# Publishes the static build to GitHub Pages on every push to main. Pages must
+# be switched to "GitHub Actions" once in Settings → Pages.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # A project site is served from /<repo>/, so the base path is explicit.
+      # `npm run build` also regenerates quran.json from the pinned sources and
+      # fails if either size budget is exceeded.
+      - run: npm run build
+        env:
+          BASE_PATH: /NgajiPlay/
+
+      # Tries to switch Pages on by itself; if the token may not change repo
+      # settings, flip it once in Settings → Pages → Source: GitHub Actions.
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      # Guard the subpath wiring before anything is published.
+      - name: The build points at the repository subpath
+        run: |
+          grep -q 'href="/NgajiPlay/manifest.webmanifest"' dist/index.html
+          grep -q 'src="/NgajiPlay/assets/' dist/index.html
+          grep -q '"start_url": "./"' dist/manifest.webmanifest
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - id: deploy
+        uses: actions/deploy-pages@v4

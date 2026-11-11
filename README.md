@@ -82,14 +82,39 @@ the module still builds a debug APK. Built files from the last local run:
 
 ## Deploy
 
-Static hosting over HTTPS, no backend. `vercel.json` sets the build command and the
-`Cache-Control` headers the service worker needs in order to update.
+Static hosting over HTTPS, no backend. Two paths are wired up.
+
+### GitHub Pages (the repo is public)
+
+`.github/workflows/pages.yml` builds on every push to `main` and publishes `dist/`.
+Enable it once: **Settings → Pages → Source: GitHub Actions**. After that push, or
+run the workflow from the Actions tab, and the app is at
+`https://<user>.github.io/NgajiPlay/`.
+
+A project site lives under `/<repo>/`, so the workflow builds with
+`BASE_PATH=/NgajiPlay/`. Everything that used to assume the site root now follows
+that base: the manifest's `start_url`/`scope`/icon paths are relative, the page
+links and font use `%BASE_URL%`/relative URLs, the Quran fetch and service-worker
+registration use `import.meta.env.BASE_URL`, and the worker derives its precache
+prefix and navigation handler from its own scope.
+
+```bash
+BASE_PATH=/NgajiPlay/ npm run build   # same build the workflow publishes
+```
+
+On Windows Git Bash, prefix it with `MSYS2_ENV_CONV_EXCL=BASE_PATH`, otherwise the
+shell rewrites `/NgajiPlay/` into a Windows path.
+
+Pages has no custom headers: it sends `Cache-Control: max-age=600`, so a new build
+can wait up to ten minutes before the update prompt appears. It still cannot swap
+under a running recording — the update flow is unaffected, only slower.
+
+A custom domain (or a repo named `<user>.github.io`) serves from the root; build
+with no `BASE_PATH` and add the `CNAME` in the Pages settings. `vercel.json` is
+still there for Vercel, which supports root hosting and the no-cache headers the
+worker prefers:
 
 ```bash
 npx vercel link
 npx vercel deploy --prod
 ```
-
-Serving from a subpath instead of a domain root requires changing `base` in
-`vite.config.ts`, `start_url`/`scope` in `public/manifest.webmanifest`, and the
-service worker scope in `src/main.ts`.

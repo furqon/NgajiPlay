@@ -12,14 +12,18 @@ declare const self: ServiceWorkerGlobalScope & {
 precacheAndRoute(self.__WB_MANIFEST);
 cleanupOutdatedCaches();
 
+// The precache keys carry the build's base path (/NgajiPlay/ on a Pages project
+// site), and the worker's own scope tells us that base without a build define.
+const base = new URL(self.registration.scope).pathname;
+
 // Every in-app navigation serves the cached shell, so it works with no network.
-registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html')));
+registerRoute(new NavigationRoute(createHandlerBoundToURL(`${base}index.html`)));
 
 // The Quran text is one file fetched on demand; it is not precached because a
 // listener who never opens a page should not pay for it. Cache it the first time
 // it is used, so a page already visited opens offline (NFR-3).
 registerRoute(
-  ({ url }) => url.pathname === '/quran.json',
+  ({ url }) => url.pathname.endsWith('/quran.json'),
   new CacheFirst({ cacheName: 'ngajiplay-quran-data' }),
   'GET',
 );

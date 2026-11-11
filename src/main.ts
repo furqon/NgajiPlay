@@ -134,7 +134,8 @@ async function registerServiceWorker(): Promise<void> {
   }
 
   try {
-    const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+    const base = import.meta.env.BASE_URL;
+    const registration = await navigator.serviceWorker.register(`${base}sw.js`, { scope: base });
     watchForUpdates(registration);
     const ready = await navigator.serviceWorker.ready;
     setStatus(ready.active ? 'ready' : 'firstLoad');

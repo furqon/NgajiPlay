@@ -8,7 +8,8 @@ let loadPromise: Promise<QuranData> | null = null;
  * offline after the first load (FR-7.2).
  */
 export function loadQuran(): Promise<QuranData> {
-  loadPromise ??= fetch('/quran.json').then(async (response) => {
+  // BASE_URL so the same build works at / and at a Pages project subpath.
+  loadPromise ??= fetch(`${import.meta.env.BASE_URL}quran.json`).then(async (response) => {
     if (!response.ok) {
       throw new Error(`quran.json failed to load: ${response.status}`);
     }

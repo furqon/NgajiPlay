@@ -46,7 +46,11 @@ test('manifest is valid and every icon matches its declared size', async ({ page
   const manifest = await response.json();
   expect(manifest.name).toBe('ngajiPlay');
   expect(manifest.short_name).toBe('ngajiPlay');
-  expect(manifest.start_url).toBe('/');
+  // Both are relative so the same manifest works at / and on a Pages subpath;
+  // here they must resolve to the site root.
+  const manifestUrl = new URL('/manifest.webmanifest', page.url());
+  expect(new URL(manifest.start_url, manifestUrl).pathname).toBe('/');
+  expect(new URL(manifest.scope, manifestUrl).pathname).toBe('/');
   expect(manifest.display).toBe('standalone');
   expect(manifest.theme_color).toMatch(/^#[0-9a-f]{6}$/i);
   expect(manifest.background_color).toMatch(/^#[0-9a-f]{6}$/i);
@@ -59,7 +63,9 @@ test('manifest is valid and every icon matches its declared size', async ({ page
   expect(manifest.icons.some((icon: { purpose?: string }) => icon.purpose === 'maskable')).toBe(true);
 
   for (const icon of manifest.icons as Array<{ src: string; sizes: string; type: string }>) {
-    const iconResponse = await request.get(icon.src);
+    // Relative to the manifest, exactly as a browser resolves it.
+    const iconUrl = new URL(icon.src, manifestUrl);
+    const iconResponse = await request.get(iconUrl.pathname);
     expect(iconResponse.status(), `${icon.src} should exist`).toBe(200);
     expect(iconResponse.headers()['content-type']).toContain('image/png');
 

@@ -4,9 +4,12 @@ import { VitePWA } from 'vite-plugin-pwa';
 // The manifest lives in public/manifest.webmanifest so it is readable and
 // reviewable on its own. Only the service worker is generated here: it is
 // hand-written (src/sw.ts) and gets the build's asset list injected.
+// Root hosting (Vercel, a custom domain) keeps '/'. A GitHub Pages project site
+// is served from /<repo>/, so the Pages workflow sets `BASE_PATH=/NgajiPlay/`.
+const base = process.env.BASE_PATH ?? '/';
+
 export default defineConfig({
-  // Root hosting (Vercel). Serve from a subpath by changing this and start_url.
-  base: '/',
+  base,
   build: {
     target: 'es2022',
   },

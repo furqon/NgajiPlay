@@ -60,7 +60,7 @@ export async function renderAbout(target: HTMLElement, isCurrent: () => boolean)
         el('p', { text: t('aboutFontBody') }),
         el('a', {
           class: 'about-link',
-          attrs: { href: '/fonts/OFL.txt', 'data-testid': 'ofl-link' },
+          attrs: { href: `${import.meta.env.BASE_URL}fonts/OFL.txt`, 'data-testid': 'ofl-link' },
           text: t('aboutFontLicense'),
         }),
       ]),
