@@ -346,7 +346,37 @@ h1 {
 
 /* The whole row is the record button, so the touch target is the card (NFR-6). */
 .slice {
-  display: block;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: stretch;
+}
+
+/* Only a recorded slice gets a second target: replay it in place. */
+.slice-play {
+  min-width: 44px;
+  min-height: 56px;
+  border: 1px solid var(--deep);
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--deep);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.slice-play[hidden] {
+  display: none;
+}
+
+.slice-play:focus-visible {
+  outline: 3px solid var(--deep);
+  outline-offset: 2px;
+}
+
+.slice[data-playing='true'] .slice-record {
+  border-color: var(--deep);
+  box-shadow: inset 3px 0 0 var(--deep);
 }
 
 .slice-record {

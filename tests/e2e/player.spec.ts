@@ -248,6 +248,32 @@ test('audio keeps playing across route changes, in a single element (FR-5.5)', a
   await expect.poll(() => elapsedSeconds(page), { timeout: 6_000 }).toBeGreaterThan(afterPage);
 });
 
+test('a recorded slice plays straight from its page, without the library', async ({ page }) => {
+  await seed(page, [FIRST, SECOND]);
+  await page.goto('/#/p/1');
+  await expect(page.getByTestId('slice')).toHaveCount(1);
+
+  const play = page.getByTestId('slice-play');
+  await expect(play).toBeVisible();
+  await expect(play).toHaveAttribute('aria-label', 'Putar Al-Fatihah ayat 1–7');
+
+  await play.click();
+  await expect(page.getByTestId('player-title')).toHaveText('Ali satu');
+  await expect(page.getByTestId('slice')).toHaveAttribute('data-playing', 'true');
+  await expect(play).toHaveText('❚❚');
+  await expect.poll(() => elapsedSeconds(page), { timeout: 6_000 }).toBeGreaterThan(0);
+
+  // The same control pauses; it does not restart the clip.
+  await play.click();
+  await expect(page.getByTestId('player-toggle')).toHaveText('Putar');
+  await expect(play).toHaveText('▶');
+
+  // A page with nothing recorded has no play control at all.
+  await page.goto('/#/p/100');
+  await expect(page.getByTestId('slice')).toHaveCount(1);
+  await expect(page.getByTestId('slice-play')).toBeHidden();
+});
+
 test('remembered clip and position come back after a reload, still paused (FR-5.4)', async ({
   page,
 }) => {

@@ -1,6 +1,7 @@
 import { loadQuran, pageCount, slicesOnPage, surah } from '../data/quran';
+import { sharedPlayer, type PlayerState } from '../playback/player';
 import { pageHref } from '../router';
-import { clipsOnPage } from '../store/db';
+import { clipId, clipsOnPage } from '../store/db';
 import { fill, t } from '../strings';
 import type { Clip, QuranData } from '../types';
 import { el } from './dom';
@@ -131,8 +132,15 @@ function sliceList(
     list,
   );
   const rows = new Map<number, HTMLElement>();
+  const player = sharedPlayer();
+  /** What this page can play, in playlist order — the queue for its play buttons. */
+  const playable = new Map<number, Clip>();
+  const queue = (): Clip[] =>
+    [...playable.values()].sort(
+      (a, b) => a.surah - b.surah || a.ayahStart - b.ayahStart,
+    );
 
-  const setRecorded = (surahNumber: number, recorded: boolean): void => {
+  const setRecorded = (surahNumber: number, recorded: boolean, clip?: Clip): void => {
     const row = rows.get(surahNumber);
     if (!row) return;
     row.dataset.recorded = String(recorded);
@@ -141,7 +149,32 @@ function sliceList(
       badge.dataset.state = recorded ? 'recorded' : 'empty';
       badge.textContent = recorded ? t('recorded') : t('notRecorded');
     }
+    const play = row.querySelector<HTMLButtonElement>('[data-testid="slice-play"]');
+    if (play) play.hidden = !recorded;
+    if (clip) playable.set(clip.surah, clip);
   };
+
+  const paintPlaying = (state: PlayerState): void => {
+    for (const play of section.querySelectorAll<HTMLButtonElement>(
+      '[data-testid="slice-play"]',
+    )) {
+      const active = state.clip?.id === clipId(pageNumber, Number(play.dataset.surah));
+      play.textContent = active && state.playing ? '\u275a\u275a' : '\u25b6';
+      play.setAttribute(
+        'aria-label',
+        (active && state.playing ? play.dataset.pauseLabel : play.dataset.playLabel) ?? '',
+      );
+      play.closest('[data-testid="slice"]')?.setAttribute('data-playing', String(active));
+    }
+  };
+
+  const unsubscribe = player.subscribe((state) => {
+    if (!isCurrent()) {
+      unsubscribe();
+      return;
+    }
+    paintPlaying(state);
+  });
 
   for (const slice of slicesOnPage(data, pageNumber)) {
     const name = surah(data, slice.surah).nameId;
@@ -167,13 +200,39 @@ function sliceList(
       el('span', { class: 'badge', attrs: { 'data-state': 'empty' }, text: t('notRecorded') }),
     );
 
+    const playLabel = fill(t('playSliceLabel'), {
+      surah: name,
+      from: slice.ayahStart,
+      to: slice.ayahEnd,
+    });
+    // A second, small target: replay this recording without opening the library.
+    const play = el('button', {
+      class: 'slice-play',
+      attrs: {
+        type: 'button',
+        'data-testid': 'slice-play',
+        'data-surah': slice.surah,
+        'data-play-label': playLabel,
+        'data-pause-label': t('playerPause'),
+        'aria-label': playLabel,
+        hidden: true,
+      },
+      text: '\u25b6',
+    });
+
     const row = el(
       'li',
       {
         class: 'slice',
-        attrs: { 'data-testid': 'slice', 'data-surah': slice.surah, 'data-recorded': 'false' },
+        attrs: {
+          'data-testid': 'slice',
+          'data-surah': slice.surah,
+          'data-recorded': 'false',
+          'data-playing': 'false',
+        },
       },
       button,
+      play,
     );
 
     button.addEventListener('click', () => {
@@ -183,8 +242,14 @@ function sliceList(
         data,
         page: pageNumber,
         slice,
-        onSaved: (clip: Clip) => setRecorded(clip.surah, true),
+        onSaved: (clip: Clip) => setRecorded(clip.surah, true, clip),
       });
+    });
+
+    play.addEventListener('click', () => {
+      const id = clipId(pageNumber, slice.surah);
+      if (player.state.clip?.id === id) player.toggle();
+      else void player.play(queue(), id);
     });
 
     rows.set(slice.surah, row);
@@ -193,12 +258,10 @@ function sliceList(
 
   // The list paints immediately; recorded state arrives from IndexedDB after.
   void clipsOnPage(pageNumber)
-    .then((clips) => {
+    .then((found) => {
       if (!isCurrent()) return;
-      const recorded = new Set(clips.map((clip) => clip.surah));
-      for (const surahNumber of rows.keys()) {
-        if (recorded.has(surahNumber)) setRecorded(surahNumber, true);
-      }
+      for (const clip of found) setRecorded(clip.surah, true, clip);
+      paintPlaying(player.state);
     })
     .catch(() => {
       // Leaving every slice as "not recorded" is wrong only readably, not

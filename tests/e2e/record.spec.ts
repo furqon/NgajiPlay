@@ -57,6 +57,8 @@ test('records a clip, saves it, survives a reload and plays back', async ({ page
   await expect(page.getByTestId('recorder-status')).toHaveText('Rekaman tersimpan.');
   await expect(page.getByTestId('slice')).toHaveAttribute('data-recorded', 'true');
   await expect(page.getByTestId('slice').locator('.badge')).toHaveText('Sudah direkam');
+  // The save reveals the in-place play control for this slice.
+  await expect(page.getByTestId('slice-play')).toBeVisible();
 
   // Survives a reload: the badge comes back from IndexedDB, not from memory.
   await page.reload();
