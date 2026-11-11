@@ -24,7 +24,7 @@ test('shell renders as a secure, installable document', async ({ page }) => {
 
   await expect(page).toHaveTitle('ngajiPlay');
   await expect(page.getByRole('heading', { name: 'ngajiPlay' })).toBeVisible();
-  await expect(page.getByTestId('tagline')).not.toBeEmpty();
+  await expect(page.getByTestId('search-input')).toBeVisible();
 
   // Microphone, service workers and installability all require a secure context.
   expect(await page.evaluate(() => window.isSecureContext)).toBe(true);
@@ -99,7 +99,7 @@ test('reloads from the cache with the network switched off', async ({ context, p
   try {
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { name: 'ngajiPlay' })).toBeVisible();
-    await expect(page.getByTestId('tagline')).not.toBeEmpty();
+    await expect(page.getByTestId('search-input')).toBeVisible();
   } finally {
     await context.setOffline(false);
   }

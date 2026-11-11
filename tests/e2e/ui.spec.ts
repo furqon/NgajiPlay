@@ -102,7 +102,7 @@ test('a page outside 1–604 shows the designed error, not a crash', async ({ pa
 
 test('search accepts a page number and a surah name, and opens the page', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByTestId('tagline')).not.toBeEmpty();
+  await expect(page.getByTestId('search-input')).toBeVisible();
   await expect(page.getByTestId('search-state')).toContainText('1–604');
 
   await page.getByTestId('search-input').fill('100');
@@ -181,6 +181,9 @@ test('the how-to icon opens a modal with the three steps, and it closes', async 
   await page.getByTestId('how-to-open').click();
   await expect(dialog).toBeVisible();
   await expect(dialog).toContainText('Cara pakai');
+  // The old tagline moved in here instead of sitting under the header.
+  await expect(page.getByTestId('how-to-intro')).toContainText('Rekam bacaan');
+  await expect(page.getByTestId('tagline')).toHaveCount(0);
   await expect(dialog.locator('li')).toHaveCount(3);
   await expect(dialog.locator('li').nth(0)).toContainText('Cari halaman');
   await expect(dialog.locator('li').nth(1)).toContainText('rekam');
@@ -201,6 +204,11 @@ test('the search screen lists all 114 surahs, each opening on its first page', a
 
   const links = page.getByTestId('surah-link');
   await expect(links).toHaveCount(114);
+
+  // The index is fixed at the top and the search box sits below it.
+  const index = await page.getByTestId('surah-index').boundingBox();
+  const input = await page.getByTestId('search-input').boundingBox();
+  expect(input!.y).toBeGreaterThanOrEqual(index!.y + index!.height - 1);
   await expect(links.first()).toContainText('Al-Fatihah');
   await expect(links.first()).toHaveAttribute('href', '#/p/1');
   await expect(links.last()).toContainText('An-Nas');

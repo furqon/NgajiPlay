@@ -42,6 +42,9 @@ export function mountHowTo(target: HTMLElement): void {
 
     dialog.replaceChildren(
       el('h2', { class: 'how-to-title', attrs: { id: 'how-to-title' }, text: t('hintTitle') }),
+      // The one-line pitch used to sit under the search box; here it is read
+      // deliberately rather than pushing the app down on every visit.
+      el('p', { class: 'how-to-intro', attrs: { 'data-testid': 'how-to-intro' }, text: t('tagline') }),
       el(
         'ol',
         { class: 'how-to-steps' },

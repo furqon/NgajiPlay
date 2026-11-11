@@ -24,7 +24,10 @@ async function noSidewaysScroll(page: Page): Promise<void> {
 
 test('the language switch repaints the app and survives a reload (FR-7.3)', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByTestId('tagline')).toContainText('Rekam bacaan');
+  await expect(page.getByTestId('search-input')).toHaveAttribute(
+    'aria-label',
+    'Cari halaman atau surah',
+  );
   await expect(page.getByTestId('language-id')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByTestId('language-en')).toHaveAttribute('aria-pressed', 'false');
 
@@ -32,7 +35,10 @@ test('the language switch repaints the app and survives a reload (FR-7.3)', asyn
 
   await expect(page.getByTestId('language-en')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-  await expect(page.getByTestId('tagline')).toContainText('Record your child');
+  await expect(page.getByTestId('search-input')).toHaveAttribute(
+    'aria-label',
+    'Search a page or surah',
+  );
   await expect(page.getByRole('button', { name: 'Search' })).toBeVisible();
   await expect(page.getByTestId('search-input')).toHaveAttribute(
     'placeholder',
@@ -44,16 +50,30 @@ test('the language switch repaints the app and survives a reload (FR-7.3)', asyn
   // Persisted, not just repainted (the write is async, so wait for the store).
   await expect.poll(() => storedLanguage(page)).toBe('en');
   await page.reload();
-  await expect(page.getByTestId('tagline')).toContainText('Record your child');
+  await expect(page.getByTestId('search-input')).toHaveAttribute(
+    'aria-label',
+    'Search a page or surah',
+  );
   await expect(page.getByTestId('language-en')).toHaveAttribute('aria-pressed', 'true');
+
+  // The one-line pitch lives in the how-to modal now, in the chosen language.
+  await page.getByTestId('how-to-open').click();
+  await expect(page.getByTestId('how-to-intro')).toContainText('Record your child');
+  await page.getByTestId('how-to-close').click();
 
   // And back, with the Indonesian copy intact.
   await page.getByTestId('language-id').click();
-  await expect(page.getByTestId('tagline')).toContainText('Rekam bacaan');
+  await expect(page.getByTestId('search-input')).toHaveAttribute(
+    'aria-label',
+    'Cari halaman atau surah',
+  );
   await expect(page.getByTestId('about-link')).toHaveText('Tentang');
   await expect.poll(() => storedLanguage(page)).toBe('id');
   await page.reload();
-  await expect(page.getByTestId('tagline')).toContainText('Rekam bacaan');
+  await expect(page.getByTestId('search-input')).toHaveAttribute(
+    'aria-label',
+    'Cari halaman atau surah',
+  );
 });
 
 test('English screens fit a 390px phone without being cut off', async ({ page }) => {

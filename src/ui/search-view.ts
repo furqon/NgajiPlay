@@ -43,13 +43,14 @@ export function renderSearch(target: HTMLElement): void {
 
   const indexSlot = el('div');
 
+  // The surah index comes first, and the search box sits below it: browsing
+  // needs no typing, and a query's results still land right under the box.
   target.append(
-    el('p', { class: 'tagline', attrs: { 'data-testid': 'tagline' }, text: t('tagline') }),
-    el('div', { class: 'view-row library-row' }, libraryLink()),
+    indexSlot,
     form,
     state,
     results,
-    indexSlot,
+    el('div', { class: 'view-row library-row' }, libraryLink()),
   );
 
   let data: QuranData | null = null;
