@@ -1,6 +1,7 @@
 import { loadQuran, surah } from '../data/quran';
 import { searchQuran, type PageHit } from '../data/search';
 import { pageHref } from '../router';
+import { clipCount, getSetting, setSetting } from '../store/db';
 import { fill, t } from '../strings';
 import type { QuranData } from '../types';
 import { el } from './dom';
@@ -40,13 +41,18 @@ export function renderSearch(target: HTMLElement): void {
     el('button', { class: 'search-button', attrs: { type: 'submit' }, text: t('searchButton') }),
   );
 
+  const hintSlot = el('div');
+
   target.append(
     el('p', { class: 'tagline', attrs: { 'data-testid': 'tagline' }, text: t('tagline') }),
+    hintSlot,
     el('div', { class: 'view-row library-row' }, libraryLink()),
     form,
     state,
     results,
   );
+
+  void loadHint(hintSlot);
 
   let data: QuranData | null = null;
 
@@ -93,6 +99,51 @@ export function renderSearch(target: HTMLElement): void {
     .catch(() => {
       state.textContent = t('loadError');
     });
+}
+
+const HINT_KEY = 'hintDismissed';
+
+/**
+ * First-run guidance, for someone who has never recorded anything: what the
+ * app wants from them, in the order it happens. It disappears once there is a
+ * recording to look at, and never comes back after being dismissed.
+ */
+async function loadHint(slot: HTMLElement): Promise<void> {
+  try {
+    if (await getSetting(HINT_KEY, false)) return;
+    if ((await clipCount()) > 0) return;
+    slot.replaceChildren(firstRunHint());
+  } catch {
+    // A store we cannot read is not a reason to explain a flow we cannot honour.
+  }
+}
+
+function firstRunHint(): HTMLElement {
+  const dismiss = el('button', {
+    class: 'hint-dismiss',
+    attrs: { type: 'button', 'data-testid': 'hint-dismiss' },
+    text: t('hintDismiss'),
+  });
+  const card = el(
+    'section',
+    { class: 'hint', attrs: { 'data-testid': 'first-run-hint' } },
+    el('h2', { class: 'hint-title', text: t('hintTitle') }),
+    el(
+      'ol',
+      { class: 'hint-steps' },
+      el('li', { text: t('hintStep1') }),
+      el('li', { text: t('hintStep2') }),
+      el('li', { text: t('hintStep3') }),
+    ),
+    dismiss,
+  );
+
+  dismiss.addEventListener('click', () => {
+    card.remove();
+    void setSetting(HINT_KEY, true).catch(() => undefined);
+  });
+
+  return card;
 }
 
 function resultRow(data: QuranData, hit: PageHit): HTMLLIElement {

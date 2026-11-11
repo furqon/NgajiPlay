@@ -170,6 +170,63 @@ test('a recorded slice is marked as recorded', async ({ page }) => {
   await expect(slice.locator('.badge')).toHaveText('Sudah direkam');
 });
 
+test('a first-run hint explains record → play → follow, and stays dismissed', async ({ page }) => {
+  await page.goto('/');
+
+  const hint = page.getByTestId('first-run-hint');
+  await expect(hint).toBeVisible();
+  await expect(hint).toContainText('Cara pakai');
+  await expect(hint.locator('li')).toHaveCount(3);
+  await expect(hint.locator('li').nth(0)).toContainText('Cari halaman');
+  await expect(hint.locator('li').nth(1)).toContainText('rekam');
+  await expect(hint.locator('li').nth(2)).toContainText('Putar ulang');
+
+  await page.getByTestId('hint-dismiss').click();
+  await expect(hint).toHaveCount(0);
+
+  // Dismissed for good: the flag is in the store, so a reload cannot bring it
+  // back. (The write is async; assert what is stored, not what was painted.)
+  await expect
+    .poll(() =>
+      page.evaluate(async (modulePath) => {
+        const db = await import(/* @vite-ignore */ modulePath);
+        return (await db.getSetting('hintDismissed', false)) as boolean;
+      }, DB_MODULE),
+    )
+    .toBe(true);
+  await page.reload();
+  await expect(page.getByTestId('first-run-hint')).toHaveCount(0);
+  await page.goto('/#/p/2');
+  await page.getByTestId('back').click();
+  await expect(page.getByTestId('first-run-hint')).toHaveCount(0);
+});
+
+test('the hint is gone once a recording exists', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(async (modulePath) => {
+    const db = await import(/* @vite-ignore */ modulePath);
+    const blob = new Blob(['seed'], { type: 'audio/webm;codecs=opus' });
+    await db.putClip(
+      {
+        id: db.clipId(2, 2),
+        page: 2,
+        surah: 2,
+        ayahStart: 1,
+        ayahEnd: 5,
+        mimeType: blob.type,
+        bytes: blob.size,
+        durationMs: 1000,
+        createdAt: Date.now(),
+        displayName: 'p002-s002-al-baqarah',
+      },
+      blob,
+    );
+  }, DB_MODULE);
+
+  await page.goto('/');
+  await expect(page.getByTestId('first-run-hint')).toHaveCount(0);
+});
+
 test('the page view fits a 390px phone without sideways scrolling', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/#/p/100');

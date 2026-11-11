@@ -57,9 +57,14 @@ test('the language switch repaints the app and survives a reload (FR-7.3)', asyn
 });
 
 test('English screens fit a 390px phone without being cut off', async ({ page }) => {
-  await page.goto('/#/library');
+  await page.goto('/');
   await page.getByTestId('language-en').click();
 
+  // The first-run hint is on this screen too, and its longest step wraps.
+  await expect(page.getByTestId('first-run-hint')).toContainText('How it works');
+  await noSidewaysScroll(page);
+
+  await page.getByTestId('library-link').click();
   await expect(page.getByRole('heading', { name: 'Library' })).toBeVisible();
   await expect(page.getByTestId('library-empty')).toContainText('No recordings yet');
   await expect(page.getByTestId('storage-usage')).toContainText('quota');

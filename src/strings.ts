@@ -116,6 +116,11 @@ const id = {
   aboutPrivacyBody:
     'Rekaman hanya tersimpan di perangkat ini. Tidak ada akun, iklan, atau telemetri; berkas hanya keluar lewat ekspor yang Anda minta sendiri.',
   aboutLoadError: 'Teks lisensi gagal dimuat. Periksa koneksi lalu muat ulang.',
+  hintTitle: 'Cara pakai',
+  hintStep1: 'Cari halaman atau surah yang sedang dibaca.',
+  hintStep2: 'Ketuk bagian surah, lalu rekam bacaan anak.',
+  hintStep3: 'Putar ulang: halaman ikut berpindah dan ayat yang dibaca ditandai.',
+  hintDismiss: 'Mengerti',
   playerLoadFailed: 'Rekaman ini gagal diputar. Coba pilih lagi dari perpustakaan.',
   loading: 'Memuat…',
   loadError: 'Data Al-Qur’an gagal dimuat. Periksa koneksi lalu muat ulang.',
@@ -237,6 +242,11 @@ const en: Record<StringKey, string> = {
   aboutPrivacyBody:
     'Recordings stay on this device only. No accounts, no ads, no telemetry; a file leaves only through an export you ask for.',
   aboutLoadError: 'The licence text could not be loaded. Check the connection and reload.',
+  hintTitle: 'How it works',
+  hintStep1: 'Find the page or surah being read.',
+  hintStep2: 'Tap a surah part, then record the recitation.',
+  hintStep3: 'Play it back: the page follows and the ayahs being read are marked.',
+  hintDismiss: 'Got it',
   playerLoadFailed: 'This recording could not be played. Pick it again from the library.',
   loading: 'Loading…',
   loadError: 'The Quran data failed to load. Check the connection and reload.',
