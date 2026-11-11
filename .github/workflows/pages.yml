@@ -39,9 +39,11 @@ jobs:
         env:
           BASE_PATH: /NgajiPlay/
 
-      # Tries to switch Pages on by itself; if the token may not change repo
-      # settings, flip it once in Settings → Pages → Source: GitHub Actions.
+      # A workflow token cannot change repository settings, so this step can
+      # only prepare metadata. Enable Pages once by hand: Settings → Pages →
+      # Source: GitHub Actions. Until then the deploy step fails with that hint.
       - uses: actions/configure-pages@v5
+        continue-on-error: true
         with:
           enablement: true
 
