@@ -103,7 +103,16 @@ test('a page outside 1–604 shows the designed error, not a crash', async ({ pa
 test('search accepts a page number and a surah name, and opens the page', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByTestId('search-input')).toBeVisible();
-  await expect(page.getByTestId('search-state')).toContainText('1–604');
+  // The 1–604 guidance is now the tooltip of the small "i" beside the box.
+  await expect(page.getByTestId('search-hint')).toHaveAttribute(
+    'title',
+    'Ketik nomor halaman 1–604 atau nama surah.',
+  );
+  await expect(page.getByTestId('search-hint')).toHaveAttribute(
+    'aria-label',
+    'Ketik nomor halaman 1–604 atau nama surah.',
+  );
+  await expect(page.getByTestId('search-state')).toBeEmpty();
 
   await page.getByTestId('search-input').fill('100');
   // Page 100, plus surah 100 (Al-'Adiyat) which starts on p599 — both rows are

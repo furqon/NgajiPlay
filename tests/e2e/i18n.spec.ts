@@ -53,7 +53,12 @@ test('the language switch repaints the app and survives a reload (FR-7.3)', asyn
     'For example: 100, 2, Al-Baqarah',
   );
   await expect(page.getByTestId('about-link')).toHaveText('About');
-  await expect(page.getByTestId('library-link')).toHaveText('Library');
+  // The library and the search help are icons now; their names are labels.
+  await expect(page.getByTestId('library-link')).toHaveAttribute('aria-label', 'Library');
+  await expect(page.getByTestId('search-hint')).toHaveAttribute(
+    'title',
+    'Type a page number from 1 to 604, or a surah name.',
+  );
 
   // Persisted, not just repainted (the write is async, so wait for the store).
   await expect.poll(() => storedLanguage(page)).toBe('en');

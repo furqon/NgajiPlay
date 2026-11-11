@@ -98,9 +98,21 @@ h1 {
   cursor: pointer;
 }
 
-.lang-toggle:focus-visible {
+.lang-toggle:focus-visible,
+.icon-link:focus-visible {
   outline: 3px solid var(--deep);
   outline-offset: 2px;
+}
+
+.icon-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  color: var(--deep);
+  text-decoration: none;
 }
 
 .mark {
@@ -194,6 +206,30 @@ h1 {
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+}
+
+/* The search help, as a small "i" whose tooltip carries the sentence. */
+.search-hint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  min-height: 48px;
+  color: var(--muted);
+  cursor: help;
+}
+
+.search-hint-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--rule);
+  border-radius: 50%;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-style: italic;
 }
 
 .state {
@@ -629,18 +665,6 @@ h1 {
 }
 
 /* --- library ------------------------------------------------------------ */
-
-.view-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.library-row {
-  justify-content: flex-end;
-  margin: 8px 0 0;
-}
 
 .library-title {
   margin: 0 0 6px;

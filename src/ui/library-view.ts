@@ -4,18 +4,62 @@ import { downloadClip } from '../recording/export';
 import { libraryHref, pageHref } from '../router';
 import { deleteClip, getClip, getSetting, listClips, renameClip, setSetting } from '../store/db';
 import { estimateStorage, isStoragePersisted, requestPersistence } from '../store/storage';
-import { currentLanguage, fill, t } from '../strings';
+import { currentLanguage, fill, onLanguageChange, t } from '../strings';
 import type { Clip, QuranData } from '../types';
 import { el } from './dom';
 import { formatDate, formatDuration, formatFileSize } from './format';
 
-/** Entry point from the search screen and the page view. */
-export function libraryLink(): HTMLElement {
-  return el('a', {
-    class: 'back library-link',
+/**
+ * The library as a header icon, in the same row as the language, help and
+ * status controls. The name is its tooltip and accessible label, and it follows
+ * the chosen language even though the header is not re-rendered.
+ */
+export function mountLibraryLink(target: HTMLElement): void {
+  if (target.querySelector('[data-testid="library-link"]')) return;
+
+  const link = el('a', {
+    class: 'icon-link',
     attrs: { href: libraryHref(), 'data-testid': 'library-link' },
-    text: t('libraryOpen'),
   });
+  link.append(booksIcon());
+
+  const paint = (): void => {
+    link.setAttribute('aria-label', t('libraryOpen'));
+    link.setAttribute('title', t('libraryOpen'));
+  };
+
+  onLanguageChange(paint);
+  paint();
+  target.append(link);
+}
+
+/** Three book spines, drawn in code so no icon font or sprite is fetched. */
+function booksIcon(): SVGElement {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('width', '18');
+  svg.setAttribute('height', '18');
+  svg.setAttribute('aria-hidden', 'true');
+
+  for (const [x, width] of [
+    [4, 4],
+    [10.5, 4],
+    [17, 3],
+  ] as const) {
+    const spine = document.createElementNS(ns, 'rect');
+    spine.setAttribute('x', String(x));
+    spine.setAttribute('y', '5');
+    spine.setAttribute('width', String(width));
+    spine.setAttribute('height', '14');
+    spine.setAttribute('rx', '1');
+    spine.setAttribute('fill', 'none');
+    spine.setAttribute('stroke', 'currentColor');
+    spine.setAttribute('stroke-width', '1.6');
+    svg.append(spine);
+  }
+
+  return svg;
 }
 
 /**

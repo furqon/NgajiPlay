@@ -4,7 +4,6 @@ import { pageHref } from '../router';
 import { currentLanguage, fill, t } from '../strings';
 import type { QuranData } from '../types';
 import { el } from './dom';
-import { libraryLink } from './library-view';
 import { surahIndex } from './surah-index';
 
 /**
@@ -34,24 +33,35 @@ export function renderSearch(target: HTMLElement): void {
   });
   const results = el('ul', { class: 'results', attrs: { 'data-testid': 'results' } });
 
+  // What used to be a line of help under the box is now the tooltip of a small
+  // icon beside it, so an empty search takes no vertical room.
+  const hint = el(
+    'span',
+    {
+      class: 'search-hint',
+      attrs: {
+        role: 'img',
+        'data-testid': 'search-hint',
+        'aria-label': t('searchHint'),
+        title: t('searchHint'),
+      },
+    },
+    el('span', { class: 'search-hint-mark', attrs: { 'aria-hidden': 'true' }, text: 'i' }),
+  );
+
   const form = el(
     'form',
     { class: 'search', attrs: { role: 'search' } },
     input,
     el('button', { class: 'search-button', attrs: { type: 'submit' }, text: t('searchButton') }),
+    hint,
   );
 
   const indexSlot = el('div');
 
   // The surah index comes first, and the search box sits below it: browsing
   // needs no typing, and a query's results still land right under the box.
-  target.append(
-    indexSlot,
-    form,
-    state,
-    results,
-    el('div', { class: 'view-row library-row' }, libraryLink()),
-  );
+  target.append(indexSlot, form, state, results);
 
   let data: QuranData | null = null;
 
@@ -61,7 +71,7 @@ export function renderSearch(target: HTMLElement): void {
     results.replaceChildren();
 
     if (query === '') {
-      state.textContent = t('searchHint');
+      state.textContent = '';
       return;
     }
 

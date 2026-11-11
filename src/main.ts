@@ -7,7 +7,7 @@ import { listClips } from './store/db';
 import { currentLanguage, fill, onLanguageChange, t } from './strings';
 import { renderAbout } from './ui/about-view';
 import { mountHowTo } from './ui/how-to';
-import { renderLibrary } from './ui/library-view';
+import { mountLibraryLink, renderLibrary } from './ui/library-view';
 import { mountLanguageSwitch } from './ui/language-switch';
 import { renderPage } from './ui/page-view';
 import { mountPlaybackFollow } from './ui/playback-follow';
@@ -95,7 +95,8 @@ async function start(): Promise<void> {
   if (chromeActions) {
     mountLanguageSwitch(chromeActions);
     mountHowTo(chromeActions);
-    // Language, help, then the status dot: the dot stays at the far right.
+    // Language, help, library, then the status dot at the far right.
+    mountLibraryLink(chromeActions);
     if (statusEl) chromeActions.append(statusEl);
   }
   paintStatus();
