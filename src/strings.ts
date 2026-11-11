@@ -99,6 +99,23 @@ const id = {
   playerRemainingLabel: 'Sisa {time}',
   followPage: 'Buka halaman yang diputar',
   followAyah: 'Kembali ke ayat yang diputar',
+  languageLabel: 'Bahasa',
+  aboutOpen: 'Tentang',
+  aboutTitle: 'Tentang ngajiPlay',
+  aboutTagline:
+    'Aplikasi kecil untuk mengulang bacaan Al-Qur’an anak langsung di halaman Madani.',
+  aboutQuranTitle: 'Teks Al-Qur’an',
+  aboutQuranBody: 'Teks Arab dan batas halaman Madani berasal dari {source}.',
+  aboutCopyrightLabel: 'Pemberitahuan hak cipta dari Tanzil:',
+  aboutTanzilLink: 'Buka tanzil.net',
+  aboutFontTitle: 'Huruf Arab',
+  aboutFontBody:
+    'Amiri Quran oleh Khaled Hosny, dengan lisensi SIL Open Font License 1.1. Berkas huruf di sini hanya memuat huruf yang dipakai teks Al-Qur’an.',
+  aboutFontLicense: 'Baca lisensi OFL',
+  aboutPrivacyTitle: 'Rekaman dan privasi',
+  aboutPrivacyBody:
+    'Rekaman hanya tersimpan di perangkat ini. Tidak ada akun, iklan, atau telemetri; berkas hanya keluar lewat ekspor yang Anda minta sendiri.',
+  aboutLoadError: 'Teks lisensi gagal dimuat. Periksa koneksi lalu muat ulang.',
   playerLoadFailed: 'Rekaman ini gagal diputar. Coba pilih lagi dari perpustakaan.',
   loading: 'Memuat…',
   loadError: 'Data Al-Qur’an gagal dimuat. Periksa koneksi lalu muat ulang.',
@@ -204,6 +221,22 @@ const en: Record<StringKey, string> = {
   playerRemainingLabel: '{time} left',
   followPage: 'Open the playing page',
   followAyah: 'Back to the playing ayah',
+  languageLabel: 'Language',
+  aboutOpen: 'About',
+  aboutTitle: 'About ngajiPlay',
+  aboutTagline: 'A small app for replaying a child’s recitation on the Madani page itself.',
+  aboutQuranTitle: 'The Quran text',
+  aboutQuranBody: 'The Arabic text and the Madani page boundaries come from {source}.',
+  aboutCopyrightLabel: 'Copyright notice from Tanzil:',
+  aboutTanzilLink: 'Open tanzil.net',
+  aboutFontTitle: 'Arabic typeface',
+  aboutFontBody:
+    'Amiri Quran by Khaled Hosny, under the SIL Open Font License 1.1. The font file here carries only the glyphs the Quran text needs.',
+  aboutFontLicense: 'Read the OFL licence',
+  aboutPrivacyTitle: 'Recordings and privacy',
+  aboutPrivacyBody:
+    'Recordings stay on this device only. No accounts, no ads, no telemetry; a file leaves only through an export you ask for.',
+  aboutLoadError: 'The licence text could not be loaded. Check the connection and reload.',
   playerLoadFailed: 'This recording could not be played. Pick it again from the library.',
   loading: 'Loading…',
   loadError: 'The Quran data failed to load. Check the connection and reload.',
@@ -213,12 +246,29 @@ const en: Record<StringKey, string> = {
 
 export const strings: Record<Language, Record<StringKey, string>> = { id, en };
 
-/**
- * Indonesian is always the default (REQ §4), regardless of browser locale.
- * Phase 7 replaces this with the persisted switcher value.
- */
+export const LANGUAGES: readonly Language[] = ['id', 'en'];
+
+// Indonesian is the default whatever the browser locale says (REQ §4); the
+// stored choice is applied before the first paint by `initLanguage()`.
+let language: Language = 'id';
+const listeners = new Set<(language: Language) => void>();
+
 export function currentLanguage(): Language {
-  return 'id';
+  return language;
+}
+
+/** Switches the dictionary and tells every mounted view to repaint (FR-7.3). */
+export function applyLanguage(next: Language): void {
+  if (next === language) return;
+  language = next;
+  for (const listener of listeners) listener(next);
+}
+
+export function onLanguageChange(listener: (language: Language) => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
 }
 
 export function t(key: StringKey, language: Language = currentLanguage()): string {

@@ -1,7 +1,7 @@
 import { loadQuran, surah } from '../data/quran';
 import { sharedPlayer, type PlayerState, type RepeatMode } from '../playback/player';
 import { pageHref } from '../router';
-import { fill, t } from '../strings';
+import { fill, onLanguageChange, t } from '../strings';
 import type { QuranData } from '../types';
 import { el } from './dom';
 import { formatDuration } from './format';
@@ -105,12 +105,16 @@ export function mountPlayerBar(): HTMLElement {
 
     toggle.textContent = state.playing ? t('playerPause') : t('playerPlay');
     repeat.textContent = repeatLabel(state.repeat);
+    repeat.setAttribute('aria-label', t('playerRepeatMode'));
+    previous.setAttribute('aria-label', t('playerPrevious'));
+    next.setAttribute('aria-label', t('playerNext'));
     status.textContent = state.status === 'error' ? t('playerLoadFailed') : '';
 
     updateMediaSession(state, name);
   };
 
   player.subscribe(render);
+  onLanguageChange(() => render(player.state));
 
   void loadQuran()
     .then((loaded) => {

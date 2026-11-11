@@ -1,6 +1,6 @@
 import { sharedPlayer } from '../playback/player';
 import { pageHref, parseRoute } from '../router';
-import { t } from '../strings';
+import { onLanguageChange, t } from '../strings';
 import { el } from './dom';
 
 const PLAYING_AYAH = '[data-ayah-playing="true"]';
@@ -133,6 +133,7 @@ export function mountPlaybackFollow(slot: HTMLElement): void {
     schedule();
   });
 
+  onLanguageChange(schedule);
   window.addEventListener('scroll', schedule, { passive: true });
   window.addEventListener('resize', schedule);
   window.addEventListener('hashchange', schedule);

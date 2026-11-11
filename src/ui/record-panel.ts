@@ -34,6 +34,11 @@ export function closeRecorder(): void {
   closeActive?.();
 }
 
+/** A language switch must not discard a capture that is still in the panel. */
+export function isRecorderOpen(): boolean {
+  return closeActive !== null;
+}
+
 function megabytes(bytes: number): string {
   return (bytes / MB).toFixed(1);
 }

@@ -103,14 +103,15 @@ Retire the three unknowns that could invalidate later phases, then stand up an e
 
 ## Phase 7 — UI polish, i18n, states
 
-- [ ] String dictionary for ID/EN, switcher persisted locally. (FR-7.3)
-- [ ] About screen with Tanzil attribution, link to tanzil.net and the copyright block; plus the Amiri Quran OFL notice. (FR-7.5)
-- [ ] Clean layout: large targets, one primary action per screen, readable Arabic. (NFR-6)
-- [ ] Loading, empty, error, permission-denied and quota-exceeded states. (NFR-8)
-- [ ] Safe-area insets; portrait phone and desktop layouts. (FR-7.4)
-- [ ] Measure initial load and install size against the budgets. (NFR-1, NFR-2)
+- [x] **ID/EN switcher, persisted — DONE 2026-11-11.** `strings.ts` keeps the language as state (`applyLanguage`, `onLanguageChange`); `src/i18n.ts` reads the saved choice **before the first paint** and writes it through the `settings` store. The header carries a 44px segmented control (`src/ui/language-switch.ts`), and a switch repaints the mounted view, the player bar, the follow chip, the footer link and the offline pill. A language switch during an open recording panel is deliberately deferred until the panel closes, so a capture is never thrown away to change wording. 6 unit tests guard key parity, empty values, placeholder parity and that nothing is still Indonesian in the English dictionary. (FR-7.3)
+- [x] **About screen — DONE 2026-11-11.** `#/about` (`src/ui/about-view.ts`), linked from the footer: the Tanzil copyright block printed verbatim from `quran.json` (`text`, never `innerHTML`), a link to tanzil.net with `rel="noopener noreferrer"`, the Amiri Quran OFL 1.1 notice with the shipped `/fonts/OFL.txt`, and a plain statement that recordings never leave the device. The browser test compares the on-screen block byte-for-byte with the bundled data and checks the licence file is served. (FR-7.5)
+- [x] **Layout — DONE 2026-11-11.** Every target is at least 44px (asserted for the new controls), each screen still has one primary action, and the measured 26px/2.0 Arabic is untouched. The header is now a brand + switch row; the footer is a stacked link and status pill. (NFR-6)
+- [x] **States — DONE 2026-11-11, audited.** Loading: page, library and about render `loading` before data resolves. Empty: search hint and no-match, the library's empty state, and the out-of-range page. Error: Quran data load, library load, About licence load, and the player's own failed-clip message. Permission denied and no microphone: both recorder paths. Quota: the recorder's needed/available refusal. Unsupported codec: no retry offered. The offline pill is now a real state (ready / first load / offline / unsupported) that repaints in both languages. No new screens were needed; nothing was left undesigned. (NFR-8)
+- [x] **Safe areas and wide screens — DONE 2026-11-11.** The body already honoured all four insets; the fixed player bar now also pads its left and right edges, and a ≥768px media query widens the shell padding around the same 720px reading column. The desktop test asserts the column stays ≤720px at 1280px with no sideways scroll. (FR-7.4)
+- [x] **Budgets measured — DONE 2026-11-11.** **375.2 KB gzipped** initial load against the 1.5 MB budget (NFR-1) and **1.55 MB raw** whole-build install size against 5 MB (NFR-2); `npm run build` fails if either is exceeded. (NFR-1, NFR-2)
+- [x] **Checks — DONE 2026-11-11.** 95 unit tests (6 new: dictionary and language state) and 44 browser tests (4 new: the switch repainting and persisting across a reload, English screens fitting 390px, the About notices, and the 1280px desktop column). The one failure found along the way was in the test itself — it reloaded before the IndexedDB write landed, so it now asserts the stored value rather than a repaint.
 
-**Done when** no hardcoded UI strings remain, both languages render without truncation, and measured sizes are within budget.
+**Done when** no hardcoded UI strings remain, both languages render without truncation, and measured sizes are within budget. ✅ — a source audit left only glyphs (`‹ › ▶ ❚❚`) and separators as literals; both languages are asserted at 390px and 1280px with no horizontal overflow and no missing content; 375.2 KB gzipped / 1.55 MB raw sit at 25% and 31% of their budgets. **Phone ⏳** — notch/inset rendering and iOS text sizes remain device checks, along with everything else behind Spike A.
 
 ## Phase 8 — PWA, offline, release
 

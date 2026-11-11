@@ -59,6 +59,13 @@ h1 {
   padding: 14px 16px 2px;
 }
 
+.chrome-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .brand {
   display: inline-flex;
   align-items: center;
@@ -66,6 +73,42 @@ h1 {
   min-height: 44px;
   color: inherit;
   text-decoration: none;
+}
+
+/* --- language switch ---------------------------------------------------- */
+
+.lang-switch {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: #fff;
+}
+
+.lang-option {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.lang-option[aria-pressed='true'] {
+  background: var(--deep);
+  color: #fbf8f1;
+}
+
+.lang-option:focus-visible {
+  outline: 3px solid var(--deep);
+  outline-offset: 2px;
 }
 
 .mark {
@@ -81,9 +124,28 @@ h1 {
 }
 
 .foot {
-  display: flex;
-  justify-content: center;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
   padding: 0 16px 24px;
+}
+
+.foot-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--deep);
+  font-size: 0.88rem;
+  text-decoration: none;
+}
+
+.foot-link:hover {
+  text-decoration: underline;
+}
+
+.foot-link:focus-visible {
+  outline: 3px solid var(--deep);
+  outline-offset: 2px;
 }
 
 .tagline {
@@ -660,7 +722,8 @@ h1 {
   position: fixed;
   inset: auto 0 0;
   z-index: 10;
-  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  padding: 10px calc(16px + env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom))
+    calc(16px + env(safe-area-inset-left));
   border-top: 1px solid var(--rule);
   background: #fff;
   box-shadow: 0 -10px 28px rgb(31 36 33 / 10%);
@@ -893,6 +956,81 @@ body.has-player {
 .recorder-action:focus-visible {
   outline: 3px solid var(--deep);
   outline-offset: 2px;
+}
+
+/* --- about ------------------------------------------------------------- */
+
+.about-title {
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+  font-weight: 650;
+}
+
+.about {
+  display: grid;
+  gap: 14px;
+}
+
+.about-block {
+  padding: 14px;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.about-block h3 {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.about-block p {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* Verbatim licence text: keep its own line breaks, wrap only at word boundaries. */
+.about-copyright {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--paper);
+  font: inherit;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.about-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--deep);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.about-link:hover {
+  text-decoration: underline;
+}
+
+.about-link:focus-visible {
+  outline: 3px solid var(--deep);
+  outline-offset: 2px;
+}
+
+/* A phone in portrait and a desktop reading column (FR-7.4). */
+@media (min-width: 768px) {
+  .chrome {
+    padding: 22px 24px 6px;
+  }
+
+  .view {
+    padding: 8px 24px 40px;
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {
