@@ -122,6 +122,13 @@ const id = {
   hintStep2: 'Ketuk bagian surah, lalu rekam bacaan anak.',
   hintStep3: 'Putar ulang: halaman ikut berpindah dan ayat yang dibaca ditandai.',
   hintClose: 'Tutup',
+  installLabel: 'Pasang aplikasi',
+  installHint:
+    'Di Android/Chrome: ketuk ikon unduh di kanan atas, atau menu browser lalu “Pasang aplikasi”.',
+  installIos:
+    'Di iPhone/iPad (Safari): ketuk tombol Bagikan, lalu “Tambah ke Layar Utama”.',
+  updateReady: 'Versi baru siap dipakai.',
+  updateReload: 'Muat ulang',
   surahIndexTitle: 'Semua surah',
   playerLoadFailed: 'Rekaman ini gagal diputar. Coba pilih lagi dari perpustakaan.',
   loading: 'Memuat…',
@@ -250,6 +257,13 @@ const en: Record<StringKey, string> = {
   hintStep2: 'Tap a surah part, then record the recitation.',
   hintStep3: 'Play it back: the page follows and the ayahs being read are marked.',
   hintClose: 'Close',
+  installLabel: 'Install app',
+  installHint:
+    'On Android/Chrome: tap the download icon at the top right, or the browser menu and “Install app”.',
+  installIos:
+    'On iPhone/iPad (Safari): tap Share, then “Add to Home Screen”.',
+  updateReady: 'A new version is ready.',
+  updateReload: 'Reload',
   surahIndexTitle: 'All surahs',
   playerLoadFailed: 'This recording could not be played. Pick it again from the library.',
   loading: 'Loading…',

@@ -108,6 +108,31 @@ test('reloads from the cache with the network switched off', async ({ context, p
   }
 });
 
+test('a page opened before still opens with the network switched off', async ({ context, page }) => {
+  await page.goto('/');
+  await waitForController(page);
+
+  // First visit, then a reload with a controller in place: the text is fetched
+  // through the service worker, which caches it on use.
+  await page.goto('/#/p/2');
+  await expect(page.getByTestId('mushaf')).toContainText('الٓمٓ');
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expect(page.getByTestId('mushaf')).toContainText('الٓمٓ');
+
+  await expect
+    .poll(async () => page.evaluate(() => caches.keys()))
+    .toContain('ngajiplay-quran-data');
+
+  await context.setOffline(true);
+  try {
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByTestId('page-number')).toContainText('2');
+    await expect(page.getByTestId('mushaf')).toContainText('الٓمٓ');
+  } finally {
+    await context.setOffline(false);
+  }
+});
+
 test('fits a 390px phone without sideways scrolling', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
@@ -120,4 +145,9 @@ test('fits a 390px phone without sideways scrolling', async ({ page }) => {
   // NFR-6: touch targets are at least 44px tall.
   const statusBox = await page.getByTestId('status').boundingBox();
   expect(statusBox?.height ?? 0).toBeGreaterThanOrEqual(44);
+
+  // The library is an icon in the same row, so it must keep a 44px target too.
+  const libraryBox = await page.getByTestId('library-link').boundingBox();
+  expect(libraryBox?.height ?? 0).toBeGreaterThanOrEqual(44);
+  expect(libraryBox?.width ?? 0).toBeGreaterThanOrEqual(44);
 });

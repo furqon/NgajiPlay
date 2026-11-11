@@ -31,6 +31,19 @@ Thumbs.db
 .vercel/
 *.local
 
+# Local toolchains for the Android build (JDK, SDK) — never committed
+.tools/
+
 # Logs
 *.log
 npm-debug.log*
+
+# Android build output and the synced copy of dist (regenerate with `npx cap sync android`)
+android/app/build/
+android/.gradle/
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/keystore.properties
+
+# Built APKs are artifacts, not source
+release/

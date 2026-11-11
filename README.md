@@ -7,13 +7,16 @@ Spec: [docs/REQ.md](docs/REQ.md) · Plan: [docs/TASKS.md](docs/TASKS.md)
 
 ## Status
 
-Phase 7 — the installable shell, the Madani data layer, search + page view,
-recording per surah slice, the library (rename, delete, export, storage),
-playback with repeat off/one/all/2/3/5/10 and resume, a page that follows the
-recording with the playing ayahs highlighted, an ID/EN switch, a browsable
-surah index, a how-it-works modal, and an About screen carrying the Tanzil and
-OFL notices. Offline/install/release
-hardening is next (Phase 8).
+Phases 0–8 are implemented: the installable shell, the Madani data layer, search
++ page view, recording per surah slice, the library (rename, delete, export,
+storage), playback with repeat off/one/all/2/3/5/10 and resume, a page that
+follows the recording with the playing ayahs highlighted, an ID/EN switch, a
+browsable surah index, a how-it-works modal, an About screen carrying the Tanzil
+and OFL notices, a service worker that precaches the shell, caches the Quran text
+on use and waits for the listener before updating, an Android install prompt, iOS
+add-to-home-screen guidance, and offline relaunch of a visited page. An Android
+APK built with Capacitor lives in `android/` (see below). The HTTPS deploy and
+the on-device checks are the only outstanding items.
 
 ## Commands
 
@@ -29,6 +32,7 @@ npm run test:e2e   # Playwright: shell, data, pages, recording, library, playbac
 LONG_RECORDING=1 npx playwright test -g "thirty-second"   # the real 30 s capture
 npm run verify     # typecheck + lint + unit + e2e
 npm run icons      # regenerate public/icons from the vector mark
+npm run icons:android  # regenerate the Android launcher icons and splashes
 ```
 
 `npm run test:e2e` uses the installed Edge by default (`PW_CHANNEL=chromium` after
@@ -53,6 +57,28 @@ it is a pure function of the pinned sources.
 Vite + TypeScript with no UI framework, to stay inside the 1.5 MB gzipped budget.
 The service worker is hand-written (`src/sw.ts`) and only receives Vite's precache
 manifest, so offline behaviour is explicit.
+
+## Android APK
+
+The `android/` project is a Capacitor shell around the same `dist/` build: no
+server URL, no plugins, so the APK is the web app with its assets bundled and
+works offline exactly like the installed PWA. It needs JDK 21 and an Android SDK
+(compile/target SDK 35); Gradle 8.11.1 and the SDK are not committed.
+
+```bash
+npm run build                 # regenerate quran.json and dist/
+npx cap sync android          # copy dist into the Android project
+cd android
+JAVA_HOME=/path/to/jdk-21 ANDROID_HOME=/path/to/android-sdk \
+  ./gradlew assembleRelease   # or assembleDebug
+```
+
+`android/local.properties` points Gradle at the SDK on this machine and is
+gitignored. A signed release needs `android/keystore.properties` (also
+gitignored; `storeFile`, `storePassword`, `keyAlias`, `keyPassword`); without it
+the module still builds a debug APK. Built files from the last local run:
+`release/ngajiPlay-1.0.0.apk` (release, signature verified) and
+`release/ngajiPlay-1.0.0-debug.apk`.
 
 ## Deploy
 

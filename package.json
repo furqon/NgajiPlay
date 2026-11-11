@@ -16,13 +16,18 @@
     "pretest:e2e": "npm run build",
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
-    "verify": "npm run typecheck && npm run lint && npm run test:unit && npm run test:e2e"
+    "verify": "npm run typecheck && npm run lint && npm run test:unit && npm run test:e2e",
+    "icons:android": "node scripts/gen-android-icons.mjs"
   },
   "dependencies": {
     "workbox-precaching": "^7.4.1",
-    "workbox-routing": "^7.4.1"
+    "workbox-routing": "^7.4.1",
+    "workbox-strategies": "^7.4.1"
   },
   "devDependencies": {
+    "@capacitor/android": "^7.6.10",
+    "@capacitor/cli": "^7.6.10",
+    "@capacitor/core": "^7.6.10",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.65.0",
     "@types/node": "^26.6.6",

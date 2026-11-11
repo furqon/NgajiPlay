@@ -1,5 +1,6 @@
 import { onLanguageChange, t } from '../strings';
 import { el } from './dom';
+import { installGuidanceKey } from './install';
 
 /**
  * "How it works" behind a header icon rather than a card on the search screen:
@@ -63,6 +64,12 @@ export function mountHowTo(target: HTMLElement): void {
         el('li', { text: t('hintStep2') }),
         el('li', { text: t('hintStep3') }),
       ),
+      // FR-7.1: Android gets the one-tap prompt, iOS gets the Share-sheet path.
+      el('p', {
+        class: 'how-to-install',
+        attrs: { 'data-testid': 'install-guidance' },
+        text: t(installGuidanceKey()),
+      }),
       el('div', { class: 'how-to-actions' }, close, about),
     );
   };

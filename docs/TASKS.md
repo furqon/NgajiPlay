@@ -119,13 +119,25 @@ Retire the three unknowns that could invalidate later phases, then stand up an e
 
 ## Phase 8 — PWA, offline, release
 
-- [ ] Manifest, icons, standalone display and theme colour. (FR-7.1)
-- [ ] Service worker: precache shell and font, cache Quran chunks on use, versioned updates. (FR-7.2)
-- [ ] Android install prompt; iOS add-to-home-screen guidance. (FR-7.1)
-- [ ] Offline relaunch for a previously visited page. (FR-7.2)
-- [ ] Final size check and production deploy. (NFR-2)
+- [x] **Manifest and install metadata — DONE 2026-11-11.** `public/manifest.webmanifest` (`standalone`, theme/background colour, 192/512/maskable icons, Apple touch icon) is linked from the shell and asserted by the shell test, including each PNG's real pixel size against its declared `sizes`. No change was needed in this phase; it was built in Phase 0 and is now covered here too. (FR-7.1)
+- [x] **Service worker — DONE 2026-11-11.** `src/sw.ts` precaches every built asset including the woff2 font and the hashed JS/CSS, serves the shell for any in-app navigation, and adds a **cache-on-use** route for `/quran.json` (one file, fetched only when a page opens, so a listener who never leaves the search screen does not pay for it). Each build is a new version through the injected precache manifest's revisions; `cleanupOutdatedCaches()` drops the previous one on activation. (FR-7.2)
+- [x] **Versioned updates that wait — DONE 2026-11-11.** The new worker no longer calls `skipWaiting()` on install, so a deploy cannot swap JS and CSS under an open recording. If it is an update (a controller already exists), `src/ui/update-prompt.ts` shows one line — "Versi baru siap dipakai." with **Muat ulang** — and only that button posts `SKIP_WAITING`; the reload happens once, on `controllerchange`. A first install still activates immediately. Dismissing leaves the old build running until the next visit. (FR-7.2)
+- [x] **Install — DONE 2026-11-11.** `src/ui/install.ts` captures `beforeinstallprompt` (and calls `preventDefault`), then unhides a 44px download icon in the header whose label is "Pasang aplikasi"; the tap replays the browser's prompt and hides the icon, and `appinstalled` keeps it hidden. With no prompt the icon stays hidden — no nagging. The how-to modal now ends with the device-appropriate route to the home screen: on Android/Chrome the menu/icon sentence, on iPhone/iPad the Share → "Tambah ke Layar Utama" sentence, chosen by `installGuidanceKey()` from the user agent (including iPadOS's Macintosh UA). (FR-7.1)
+- [x] **Offline relaunch of a visited page — DONE 2026-11-11.** The shell test opens p2 with the network on, reloads so the text is fetched through the worker (proving `ngajiplay-quran-data` is written), then switches the network off and reloads: the page number and 2:1's `الٓمٓ` are still on screen, so the previously visited page is readable offline. The original offline shell reload is still asserted, and clips are stored in IndexedDB, so playback is unaffected by the network. (FR-7.2, NFR-3)
+- [x] **Final size check — DONE 2026-11-11.** **377.4 KB gzipped** initial load (budget 1.5 MB, NFR-1) and **1.56 MB raw** whole build (budget 5 MB, NFR-2); `npm run build` fails if either is exceeded. The Android package adds about 2 MB of WebView shell, which is outside the web budget and is noted in the APK section below.
+- [ ] **Production deploy.** Still blocked: no `VERCEL_TOKEN`, no authenticated `vercel` CLI and no `gh` on this machine, so nothing can be published to HTTPS from here. `vercel.json` and the README steps are ready; the deploy also gates the two remaining device checks (install prompt and iOS audio).
 
-**Done when** the app installs on Android and iPhone, relaunches offline with a previously used page readable, and clips play back while offline.
+### Android package — DONE 2026-11-11
+
+An installable APK exists as a second way to put the same app on a phone (the PWA needs the HTTPS deploy that is still blocked; the APK does not). It is a Capacitor shell, no plugins and no server URL, with `dist/` bundled into the APK, so it is offline from the first launch.
+
+- `android/` is a standard Capacitor 7 project for `com.ngajiplay.app`, version 1.0.0, min SDK 23, compile/target SDK 35. JDK 21 and the Android SDK live outside the repo (`.tools/`, gitignored); `android/local.properties` is machine-local and gitignored.
+- Launcher icons and all eleven splash screens are drawn from the same vector mark as the PWA icons (`scripts/gen-android-icons.mjs`, `npm run icons:android`), with the adaptive icon's foreground kept inside Android's safe zone, and the theme colours set to the app's deep green.
+- `RECORD_AUDIO` (plus `MODIFY_AUDIO_SETTINGS`, microphone feature optional) is declared for the recorder; `allowBackup="false"` keeps recordings out of Google's cloud backup, matching the About screen's promise.
+- **Both built and checked:** `assembleDebug` (4.7 MB) and a release signed with a locally generated keystore (`apksigner verify` → `CN=ngajiPlay`, 3.3 MB). `aapt2 dump badging` confirms the package, version, label and permissions, and the APK contains `assets/public/index.html`, `sw.js`, `quran.json` and the hashed JS, so it is self-contained. Copies are in `release/` (gitignored artifacts).
+- Not verified: installing and running it on a phone — no device is attached to this machine and no emulator image was set up, so microphone permission in the WebView, the service worker under `https://localhost`, and audio playback remain on-device checks alongside Spike A. If the WebView refuses the service worker, the app still runs (assets are local) and the status dot would report "offline mode not available".
+
+**Done when** the app installs on Android and iPhone, relaunches offline with a previously used page readable, and clips play back while offline. **Browser ✅** for installability metadata, the waiting-update flow, the install prompt control (simulated event, asserted in `install.spec.ts`), the iOS guidance sentence, and the offline relaunch of p2. **Phone ⏳** for the real install prompts and on-device offline audio, which need the HTTPS deploy and a device.
 
 ## Risks
 

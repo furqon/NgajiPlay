@@ -527,6 +527,11 @@ h1 {
   outline-offset: 2px;
 }
 
+/* Kept out of the row until the browser offers an install prompt. */
+.icon-button[hidden] {
+  display: none;
+}
+
 .how-to {
   width: min(420px, calc(100vw - 32px));
   max-height: 80vh;
@@ -561,6 +566,14 @@ h1 {
   padding-inline-start: 22px;
   color: var(--muted);
   font-size: 0.92rem;
+}
+
+.how-to-install {
+  margin: 0 0 16px;
+  padding: 8px 10px;
+  border-inline-start: 3px solid var(--rule);
+  color: var(--muted);
+  font-size: 0.85rem;
 }
 
 .how-to-actions {
@@ -857,7 +870,6 @@ h1 {
 .clip-save:focus-visible,
 .clip-cancel:focus-visible,
 .clip-meta:focus-visible,
-.library-link:focus-visible,
 .player-button:focus-visible,
 .player-meta:focus-visible {
   outline: 3px solid var(--deep);
@@ -868,6 +880,62 @@ h1 {
 .clip[data-playing='true'] {
   border-color: var(--deep);
   box-shadow: inset 3px 0 0 var(--deep);
+}
+
+/* --- update prompt ------------------------------------------------------ */
+
+/* A new build waiting behind the running one: one line, not a full-width bar. */
+.update {
+  position: fixed;
+  inset: calc(8px + env(safe-area-inset-top)) 12px auto;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 6px 8px 6px 14px;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(31 36 33 / 14%);
+  color: var(--ink);
+  font-size: 0.85rem;
+}
+
+.update[hidden] {
+  display: none;
+}
+
+.update-action {
+  min-height: 36px;
+  margin-inline-start: auto;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--deep);
+  color: #fbf8f1;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.update-dismiss {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.update-action:focus-visible,
+.update-dismiss:focus-visible {
+  outline: 3px solid var(--deep);
+  outline-offset: 2px;
 }
 
 /* --- player ------------------------------------------------------------- */

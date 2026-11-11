@@ -7,6 +7,7 @@ import { listClips } from './store/db';
 import { currentLanguage, fill, onLanguageChange, t } from './strings';
 import { renderAbout } from './ui/about-view';
 import { mountHowTo } from './ui/how-to';
+import { mountInstall } from './ui/install';
 import { mountLibraryLink, renderLibrary } from './ui/library-view';
 import { mountLanguageSwitch } from './ui/language-switch';
 import { renderPage } from './ui/page-view';
@@ -14,6 +15,7 @@ import { mountPlaybackFollow } from './ui/playback-follow';
 import { mountPlayerBar } from './ui/player-bar';
 import { closeRecorder, isRecorderOpen } from './ui/record-panel';
 import { renderSearch } from './ui/search-view';
+import { watchForUpdates } from './ui/update-prompt';
 
 const view = document.querySelector<HTMLElement>('#view');
 const statusEl = document.querySelector<HTMLElement>('[data-testid="status"]');
@@ -95,7 +97,9 @@ async function start(): Promise<void> {
   if (chromeActions) {
     mountLanguageSwitch(chromeActions);
     mountHowTo(chromeActions);
-    // Language, help, library, then the status dot at the far right.
+    // Install appears only when the browser offers it, so it sits after help.
+    mountInstall(chromeActions);
+    // Language, help, install, library, then the status dot at the far right.
     mountLibraryLink(chromeActions);
     if (statusEl) chromeActions.append(statusEl);
   }
@@ -130,9 +134,10 @@ async function registerServiceWorker(): Promise<void> {
   }
 
   try {
-    await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-    const registration = await navigator.serviceWorker.ready;
-    setStatus(registration.active ? 'ready' : 'firstLoad');
+    const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+    watchForUpdates(registration);
+    const ready = await navigator.serviceWorker.ready;
+    setStatus(ready.active ? 'ready' : 'firstLoad');
   } catch {
     setStatus('noSw');
   }
