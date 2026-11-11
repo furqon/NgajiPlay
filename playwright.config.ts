@@ -36,7 +36,7 @@ export default defineConfig({
     // IndexedDB and real data files are exercised without duplicating logic.
     {
       name: 'data',
-      testMatch: /(data|ui|record|library)\.spec\.ts/,
+      testMatch: /(data|ui|record|library|player)\.spec\.ts/,
       use: { baseURL: devURL },
     },
   ],

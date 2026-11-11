@@ -1,8 +1,12 @@
 import './styles.css';
+import { sharedPlayer } from './playback/player';
+import { readResume, trackResume } from './playback/resume';
 import { parseRoute, type Route } from './router';
+import { listClips } from './store/db';
 import { currentLanguage, fill, t } from './strings';
 import { renderPage } from './ui/page-view';
 import { renderLibrary } from './ui/library-view';
+import { mountPlayerBar } from './ui/player-bar';
 import { closeRecorder } from './ui/record-panel';
 import { renderSearch } from './ui/search-view';
 
@@ -53,6 +57,24 @@ async function render(route: Route): Promise<void> {
 
 window.addEventListener('hashchange', () => void render(parseRoute(window.location.hash)));
 void render(parseRoute(window.location.hash));
+
+// One audio element for the app, mounted outside `#view` so navigating never
+// interrupts playback (FR-5.5).
+const player = sharedPlayer();
+mountPlayerBar();
+trackResume(player);
+
+// FR-5.4: bring the last clip back paused where it stopped. It is never started
+// from here — a page that begins talking on load is hostile.
+void (async () => {
+  try {
+    const point = await readResume();
+    if (!point) return;
+    await player.restore(await listClips(), point.clipId, point.positionMs);
+  } catch {
+    // No bookmark is better than a broken start.
+  }
+})();
 
 /**
  * Registers the service worker and reflects its state in the shell.

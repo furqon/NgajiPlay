@@ -84,7 +84,7 @@ These are settled. Changing one invalidates downstream tasks — re-open it deli
 ### 5.5 Playback and repeat
 
 - **FR-5.1** Play/pause any clip, plus next and previous.
-- **FR-5.2** Repeat mode off / one / all / N applies continuously while browsing.
+- **FR-5.2** Repeat mode off / one / all / N applies continuously while browsing. A numeric N repeats *each clip* N times before the queue advances (the memorisation drill, `AAABBBCCC`); `all` loops the playlist itself.
 - **FR-5.3** Now-playing shows current clip, page, surah, elapsed and remaining time.
 - **FR-5.4** Last clip and position are remembered and resumed on reopen.
 - **FR-5.5** One audio element for the whole app: audio keeps playing while the user navigates.
@@ -120,7 +120,7 @@ The playlist is derived, never stored: clips sorted by page, surah, ayah start.
 
 ## 7. Non-functional requirements
 
-- **NFR-1** Initial load ≤ 1.5 MB gzipped including the Quran font. Measured after Phase 1: 277 KB gzipped text + 52 KB subset font ≈ 330 KB, and the whole built shell comes to **370 KB gzipped** after the Phase 4 library, about 24% of the budget. Bundling everything fits, so per-juz lazy loading is optional, not required.
+- **NFR-1** Initial load ≤ 1.5 MB gzipped including the Quran font. Measured after Phase 1: 277 KB gzipped text + 52 KB subset font ≈ 330 KB, and the whole built shell comes to **373 KB gzipped** after the Phase 5 player, about 24% of the budget. Bundling everything fits, so per-juz lazy loading is optional, not required.
 - **NFR-2** Install size ≤ 5 MB excluding recordings.
 - **NFR-3** No network needed after first load for pages already visited.
 - **NFR-4** Recordings never leave the device except when the user exports them.

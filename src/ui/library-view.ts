@@ -1,4 +1,5 @@
 import { loadQuran, surah } from '../data/quran';
+import { sharedPlayer, type Player, type PlayerState } from '../playback/player';
 import { downloadClip } from '../recording/export';
 import { libraryHref, pageHref } from '../router';
 import { deleteClip, getClip, getSetting, listClips, renameClip, setSetting } from '../store/db';
@@ -115,6 +116,8 @@ export async function renderLibrary(
   void paintStorage();
   void askPersistence();
 
+  const player = sharedPlayer();
+
   const refreshSummary = (): void => {
     const total = list.querySelectorAll('[data-testid="clip"]').length;
     count.textContent = fill(t('libraryCount'), { count: total });
@@ -124,8 +127,31 @@ export async function renderLibrary(
   };
 
   for (const clip of clips) {
-    list.append(clipRow(clip, data, status, refreshSummary));
+    list.append(clipRow(clip, data, status, refreshSummary, clips, player));
   }
+
+  // The row being played reads as the now-playing bar's row, without another fetch.
+  const paintNowPlaying = (state: PlayerState): void => {
+    const activeId = state.clip?.id;
+    for (const row of list.querySelectorAll<HTMLElement>('[data-clip-id]')) {
+      const active = row.dataset.clipId === activeId;
+      row.dataset.playing = String(active);
+      const play = row.querySelector<HTMLButtonElement>('[data-testid="clip-play"]');
+      if (play) {
+        play.textContent = active && state.playing ? t('playerPause') : t('playerPlay');
+      }
+    }
+  };
+
+  const unsubscribe = player.subscribe((state) => {
+    if (!isCurrent()) {
+      // The view is gone; keeping the subscription would leak one per visit.
+      unsubscribe();
+      return;
+    }
+    paintNowPlaying(state);
+  });
+  paintNowPlaying(player.state);
 
   exportAll.addEventListener('click', () => {
     const current = clips.filter((clip) => list.querySelector(`[data-clip-id="${clip.id}"]`));
@@ -148,6 +174,8 @@ function clipRow(
   data: QuranData,
   status: HTMLElement,
   onRemoved: () => void,
+  queue: Clip[],
+  player: Player,
 ): HTMLElement {
   const name = el('span', {
     class: 'clip-name',
@@ -163,7 +191,7 @@ function clipRow(
     'li',
     {
       class: 'clip',
-      attrs: { 'data-testid': 'clip', 'data-clip-id': clip.id },
+      attrs: { 'data-testid': 'clip', 'data-clip-id': clip.id, 'data-playing': 'false' },
     },
     el(
       'div',
@@ -193,8 +221,20 @@ function clipRow(
     actions,
   );
 
+  const togglePlayback = (): void => {
+    // Tapping the playing clip pauses it instead of starting it over (FR-5.1).
+    if (player.state.clip?.id === clip.id) player.toggle();
+    else void player.play(queue, clip.id);
+  };
+
   const defaultActions = (): void => {
+    const current = player.state;
     actions.replaceChildren(
+      action(
+        current.clip?.id === clip.id && current.playing ? t('playerPause') : t('playerPlay'),
+        'clip-play',
+        togglePlayback,
+      ),
       action(t('clipRename'), 'clip-rename', () => startRename()),
       action(t('clipExport'), 'clip-export', () => void exportOne()),
       action(t('clipDelete'), 'clip-delete', () => confirmDelete(), 'danger'),
@@ -275,6 +315,10 @@ function clipRow(
     try {
       await deleteClip(clip.id);
       row.remove();
+      // A deleted clip must not be reachable with next/previous any more.
+      const index = queue.indexOf(clip);
+      if (index >= 0) queue.splice(index, 1);
+      player.setQueue(queue);
       status.textContent = '';
       onRemoved();
     } catch {

@@ -611,9 +611,114 @@ h1 {
 .clip-save:focus-visible,
 .clip-cancel:focus-visible,
 .clip-meta:focus-visible,
-.library-link:focus-visible {
+.library-link:focus-visible,
+.player-button:focus-visible,
+.player-meta:focus-visible {
   outline: 3px solid var(--deep);
   outline-offset: 2px;
+}
+
+/* The row being played, so the list and the bar agree at a glance. */
+.clip[data-playing='true'] {
+  border-color: var(--deep);
+  box-shadow: inset 3px 0 0 var(--deep);
+}
+
+/* --- player ------------------------------------------------------------- */
+
+.player {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 10;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--rule);
+  background: #fff;
+  box-shadow: 0 -10px 28px rgb(31 36 33 / 10%);
+}
+
+.player[hidden] {
+  display: none;
+}
+
+/* Keep the last line of the page reachable behind the fixed bar. */
+body.has-player {
+  padding-bottom: 150px;
+}
+
+.player-inner {
+  display: grid;
+  gap: 6px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.player-head {
+  display: grid;
+  gap: 1px;
+}
+
+.player-title {
+  font-size: 0.95rem;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.player-meta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  color: var(--deep);
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+
+.player-meta:hover {
+  text-decoration: underline;
+}
+
+.player-status {
+  margin: 0;
+  color: #a3352a;
+  font-size: 0.82rem;
+}
+
+.player-status:empty {
+  display: none;
+}
+
+.player-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.player-button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--deep);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.player-toggle {
+  border-color: var(--deep);
+  background: var(--deep);
+  color: #fbf8f1;
+  min-width: 76px;
+}
+
+.player-time {
+  margin-inline-start: auto;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 /* --- recorder ----------------------------------------------------------- */
