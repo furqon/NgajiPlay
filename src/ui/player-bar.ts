@@ -10,8 +10,9 @@ import { formatDuration } from './format';
  * The now-playing bar (FR-5.3). It lives outside `#view`, so re-rendering a
  * page never tears down the controls or the audio they drive.
  */
-export function mountPlayerBar(): void {
-  if (document.querySelector('[data-testid="player"]')) return;
+export function mountPlayerBar(): HTMLElement {
+  const existing = document.querySelector<HTMLElement>('[data-testid="player"] .player-head');
+  if (existing) return existing;
 
   const player = sharedPlayer();
   let data: QuranData | null = null;
@@ -38,6 +39,13 @@ export function mountPlayerBar(): void {
     attrs: { 'data-testid': 'player-remaining', 'aria-live': 'off' },
   });
 
+  // The empty right-hand slot is where the follow control mounts (FR-6.4).
+  const head = el(
+    'div',
+    { class: 'player-head' },
+    el('div', { class: 'player-info' }, title, meta),
+  );
+
   const bar = el(
     'section',
     {
@@ -47,7 +55,7 @@ export function mountPlayerBar(): void {
     el(
       'div',
       { class: 'player-inner' },
-      el('div', { class: 'player-head' }, title, meta),
+      head,
       status,
       el(
         'div',
@@ -112,6 +120,8 @@ export function mountPlayerBar(): void {
     .catch(() => {
       // The bar still works with page numbers only.
     });
+
+  return head;
 }
 
 function button(

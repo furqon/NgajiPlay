@@ -6,6 +6,7 @@ import { listClips } from './store/db';
 import { currentLanguage, fill, t } from './strings';
 import { renderPage } from './ui/page-view';
 import { renderLibrary } from './ui/library-view';
+import { mountPlaybackFollow } from './ui/playback-follow';
 import { mountPlayerBar } from './ui/player-bar';
 import { closeRecorder } from './ui/record-panel';
 import { renderSearch } from './ui/search-view';
@@ -61,7 +62,7 @@ void render(parseRoute(window.location.hash));
 // One audio element for the app, mounted outside `#view` so navigating never
 // interrupts playback (FR-5.5).
 const player = sharedPlayer();
-mountPlayerBar();
+mountPlaybackFollow(mountPlayerBar());
 trackResume(player);
 
 // FR-5.4: bring the last clip back paused where it stopped. It is never started

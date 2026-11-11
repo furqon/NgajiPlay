@@ -29,12 +29,25 @@ export async function renderPage(
   try {
     const data = await loadQuran();
     if (!isCurrent()) return;
+    const article = mushaf(data, pageNumber);
     target.replaceChildren(
       navRow(),
       pager(pageNumber),
-      mushaf(data, pageNumber),
+      article,
       sliceList(target, data, pageNumber, isCurrent),
     );
+
+    // FR-6.3: mark the playing clip's ayah range, and keep following the player
+    // so the mark moves with the track and disappears with the queue.
+    const player = sharedPlayer();
+    paintPlayingAyahs(article, pageNumber, player.state);
+    const unsubscribe = player.subscribe((state) => {
+      if (!isCurrent()) {
+        unsubscribe();
+        return;
+      }
+      paintPlayingAyahs(article, pageNumber, state);
+    });
   } catch {
     if (!isCurrent()) return;
     target.replaceChildren(navRow(), el('p', { class: 'state', text: t('loadError') }));
@@ -99,6 +112,29 @@ function step(pageNumber: number, direction: 'prev' | 'next'): HTMLElement {
     attrs: { href: pageHref(pageNumber), 'aria-label': label, 'data-testid': `page-${direction}` },
     text: glyph,
   });
+}
+
+/**
+ * Paint the ayah range of the clip playing on this page. Ayah spans are shared
+ * with the recorder panel, so only this page's article is marked.
+ */
+function paintPlayingAyahs(
+  article: HTMLElement,
+  pageNumber: number,
+  state: PlayerState,
+): void {
+  const clip = state.clip?.page === pageNumber ? state.clip : null;
+
+  for (const node of article.querySelectorAll<HTMLElement>('[data-ayah]')) {
+    const playing =
+      clip !== null &&
+      Number(node.dataset.surah) === clip.surah &&
+      Number(node.dataset.ayah) >= clip.ayahStart &&
+      Number(node.dataset.ayah) <= clip.ayahEnd;
+
+    if (playing) node.dataset.ayahPlaying = 'true';
+    else delete node.dataset.ayahPlaying;
+  }
 }
 
 function mushaf(data: QuranData, pageNumber: number): HTMLElement {

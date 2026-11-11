@@ -1,28 +1,14 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { elapsedSeconds, seed, type SeedClip } from './helpers';
 
 /**
  * Playback, repeat, cross-navigation audio and resume, driven through the real
- * bar against the dev server so the store module can be seeded directly.
- *
- * The clips are 8 kHz mono WAV tones: real, decodable audio with an exact
- * duration, which keeps these cases about the player's state machine rather
- * than about the recorder (record.spec.ts already proves the recorded formats
- * play back).
+ * bar against the dev server. helpers.ts seeds real, decodable WAV clips and
+ * record.spec.ts proves the recorded formats play back.
  */
-const DB_MODULE = '/src/store/db.ts';
 
 // Playback is a phone-first screen, and the bar's five controls share one row.
 test.use({ viewport: { width: 390, height: 752 } });
-
-interface SeedClip {
-  id: string;
-  page: number;
-  surah: number;
-  from: number;
-  to: number;
-  name: string;
-  seconds: number;
-}
 
 const FIRST: SeedClip = {
   id: '1:1',
@@ -42,75 +28,6 @@ const SECOND: SeedClip = {
   name: 'Ali dua',
   seconds: 6,
 };
-
-async function seed(page: Page, clips: SeedClip[]): Promise<void> {
-  await page.goto('/');
-  await page.evaluate(
-    async ({ modulePath, clips: items }) => {
-      const tone = (seconds: number): Blob => {
-        const rate = 8_000;
-        const samples = Math.floor(rate * seconds);
-        const buffer = new ArrayBuffer(44 + samples * 2);
-        const view = new DataView(buffer);
-        const text = (offset: number, value: string): void => {
-          for (let index = 0; index < value.length; index += 1) {
-            view.setUint8(offset + index, value.charCodeAt(index));
-          }
-        };
-
-        text(0, 'RIFF');
-        view.setUint32(4, 36 + samples * 2, true);
-        text(8, 'WAVE');
-        text(12, 'fmt ');
-        view.setUint32(16, 16, true);
-        view.setUint16(20, 1, true);
-        view.setUint16(22, 1, true);
-        view.setUint32(24, rate, true);
-        view.setUint32(28, rate * 2, true);
-        view.setUint16(32, 2, true);
-        view.setUint16(34, 16, true);
-        text(36, 'data');
-        view.setUint32(40, samples * 2, true);
-        for (let index = 0; index < samples; index += 1) {
-          view.setInt16(44 + index * 2, Math.sin((2 * Math.PI * 440 * index) / rate) * 3_000, true);
-        }
-        return new Blob([buffer], { type: 'audio/wav' });
-      };
-
-      const db = await import(/* @vite-ignore */ modulePath);
-      await db.clearAll();
-      for (const item of items) {
-        const blob = tone(item.seconds);
-        await db.putClip(
-          {
-            id: item.id,
-            page: item.page,
-            surah: item.surah,
-            ayahStart: item.from,
-            ayahEnd: item.to,
-            mimeType: 'audio/wav',
-            bytes: blob.size,
-            durationMs: Math.round(item.seconds * 1000),
-            createdAt: Date.UTC(2026, 10, 10, 9, 0),
-            displayName: item.name,
-            channels: 1,
-          },
-          blob,
-        );
-      }
-    },
-    { modulePath: DB_MODULE, clips },
-  );
-
-  await page.goto('/#/library');
-  await expect(page.getByTestId('clip')).toHaveCount(clips.length);
-}
-
-async function elapsedSeconds(page: Page): Promise<number> {
-  const text = (await page.getByTestId('player-elapsed').textContent()) ?? '0:00';
-  const [minutes, seconds] = text.split(':').map(Number);
-  return (minutes ?? 0) * 60 + (seconds ?? 0);
-}
 
 test('plays a clip and the bar shows its page, surah, elapsed and remaining time', async ({
   page,
@@ -150,14 +67,20 @@ test('plays a clip and the bar shows its page, surah, elapsed and remaining time
 test('next and previous move through the playlist and mark the playing row', async ({ page }) => {
   await seed(page, [FIRST, SECOND]);
   await page.getByTestId('clip-play').first().click();
+  // Starting playback opens the clip's page (FR-6.1), so come back to the list.
+  await expect(page.getByTestId('page-number')).toContainText('Halaman 1');
+  await page.getByTestId('library-link').click();
+
   await expect(page.getByTestId('clip').first()).toHaveAttribute('data-playing', 'true');
   await expect(page.getByTestId('clip').nth(1)).toHaveAttribute('data-playing', 'false');
 
+  // A track change made while browsing does not yank the reader off the list.
   await page.getByTestId('player-next').click();
   await expect(page.getByTestId('player-title')).toHaveText('Ali dua');
   await expect(page.getByTestId('player-meta')).toContainText('Halaman 2');
   await expect(page.getByTestId('player-meta')).toContainText('Al-Baqarah');
   await expect(page.getByTestId('clip').nth(1)).toHaveAttribute('data-playing', 'true');
+  await expect(page.getByTestId('library-count')).toHaveText('2 rekaman');
 
   await page.getByTestId('player-prev').click();
   await expect(page.getByTestId('player-title')).toHaveText('Ali satu');

@@ -120,7 +120,7 @@ The playlist is derived, never stored: clips sorted by page, surah, ayah start.
 
 ## 7. Non-functional requirements
 
-- **NFR-1** Initial load ≤ 1.5 MB gzipped including the Quran font. Measured after Phase 1: 277 KB gzipped text + 52 KB subset font ≈ 330 KB, and the whole built shell comes to **373 KB gzipped** after the Phase 5 player, about 24% of the budget. Bundling everything fits, so per-juz lazy loading is optional, not required.
+- **NFR-1** Initial load ≤ 1.5 MB gzipped including the Quran font. Measured after Phase 1: 277 KB gzipped text + 52 KB subset font ≈ 330 KB, and the whole built shell comes to **374 KB gzipped** after the Phase 6 page-follow, about 24% of the budget. Bundling everything fits, so per-juz lazy loading is optional, not required.
 - **NFR-2** Install size ≤ 5 MB excluding recordings.
 - **NFR-3** No network needed after first load for pages already visited.
 - **NFR-4** Recordings never leave the device except when the user exports them.

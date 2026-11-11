@@ -683,8 +683,16 @@ body.has-player {
 }
 
 .player-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.player-info {
   display: grid;
   gap: 1px;
+  min-width: 0;
 }
 
 .player-title {
@@ -749,6 +757,41 @@ body.has-player {
   font-size: 0.84rem;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+/* "Back to the playing ayah" — never shown unless it would actually help. */
+.player-follow {
+  flex: none;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid #cfe0d6;
+  border-radius: 999px;
+  background: #f4f8f5;
+  color: var(--deep);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+}
+
+.player-follow[hidden] {
+  display: none;
+}
+
+.player-follow:focus-visible {
+  outline: 3px solid var(--deep);
+  outline-offset: 2px;
+}
+
+/* --- playing ayah ------------------------------------------------------- */
+
+/* A tint, not a border: inline boxes must not disturb the justified line. */
+.ayah[data-ayah-playing='true'] {
+  background: rgb(47 125 93 / 15%);
+  border-radius: 5px;
+  box-shadow: 0 0 0 3px rgb(47 125 93 / 15%);
+  scroll-margin: 120px;
 }
 
 /* --- recorder ----------------------------------------------------------- */

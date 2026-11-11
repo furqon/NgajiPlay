@@ -93,12 +93,13 @@ Retire the three unknowns that could invalidate later phases, then stand up an e
 
 ## Phase 6 — Quran page during playback
 
-- [ ] Playback view loads the playing clip's page automatically. (FR-6.1)
-- [ ] Page stays scrollable and never interrupts audio. (FR-6.2)
-- [ ] Highlight the playing clip's ayah range. (FR-6.3)
-- [ ] Follow track changes, plus a "back to playing page" control. (FR-6.4)
+- [x] **Playing a clip opens its page — DONE 2026-11-11.** `src/ui/playback-follow.ts`, mounted into the bar's header: the first clip of a session navigates to `#/p/N` whatever view started it, including a restored paused clip when the listener finally presses play. Asserted from the library on page 604. (FR-6.1)
+- [x] **The page scrolls without touching the audio — DONE 2026-11-11.** The player already owns its element outside the view, so a page render cannot pause it; the scroll case asserts the elapsed clock keeps advancing while scrolled to the bottom. (FR-6.2)
+- [x] **Ayah-range highlight — DONE 2026-11-11.** `paintPlayingAyahs()` marks the `[data-ayah]` spans of the playing clip's surah between `ayahStart` and `ayahEnd` with `data-ayah-playing="true"`; the tint is a background, not a border, so the justified line box is untouched. The recorder's copy of the text is a separate article and is never marked. (FR-6.3)
+- [x] **Follow the track, and a way back — DONE 2026-11-11.** A track change moves the page on only when the reader was watching the playing page; a change made while browsing the library is deliberately **not** a navigation. When the playing page is not on screen, or the mark is scrolled out (the bar's height is excluded), one 44px chip appears above the title: "Buka halaman yang diputar" or "Kembali ke ayat yang diputar". Pressing it navigates and smooth-scrolls the mark into view, or just scrolls, and never pauses. (FR-6.4)
+- [x] **Checks — DONE 2026-11-11.** 89 unit tests (unchanged: this phase is DOM behaviour, covered where it belongs) and 40 browser tests (4 new in `tests/e2e/follow.spec.ts`: the highlight on the three-surah page 604 matching only 113:1–5 and no other surah's ayahs, the page following previous/next, scrolling to the bottom leaving audio playing with the way-back chip returning to the ayah, and leaving for the library offering the page chip). Existing playback cases were updated for the new auto-navigation. Whole build **373.6 KB gzipped**.
 
-**Done when** the highlight matches the clip on a two-surah page, the page follows next/previous, and scrolling during playback does not pause audio.
+**Done when** the highlight matches the clip on a two-surah page, the page follows next/previous, and scrolling during playback does not pause audio. ✅ verified in a real browser, on page 604 which carries **three** surahs — a stricter version of the two-surah check. **Phone ⏳** — smooth scrolling and the fixed bar's behaviour over the on-screen keyboard are still device-only checks, with Spike A.
 
 ## Phase 7 — UI polish, i18n, states
 
