@@ -16,10 +16,8 @@ import { closeRecorder, isRecorderOpen } from './ui/record-panel';
 import { renderSearch } from './ui/search-view';
 
 const view = document.querySelector<HTMLElement>('#view');
-const statusEl = document.querySelector('[data-testid="status"]');
-const statusTextEl = document.querySelector('[data-testid="status-text"]');
+const statusEl = document.querySelector<HTMLElement>('[data-testid="status"]');
 const chromeActions = document.querySelector<HTMLElement>('[data-testid="chrome-actions"]');
-const aboutLink = document.querySelector<HTMLElement>('[data-testid="about-link"]');
 
 type StatusKey = 'ready' | 'firstLoad' | 'offline' | 'noSw';
 
@@ -31,17 +29,13 @@ function setStatus(key: StatusKey): void {
   paintStatus();
 }
 
+/** The dot carries no text of its own; the sentence is its tooltip and name. */
 function paintStatus(): void {
-  if (!statusEl || !statusTextEl || !statusKey) return;
+  if (!statusEl || !statusKey) return;
+  const text = t(statusKey);
   statusEl.setAttribute('data-state', statusKey);
-  statusTextEl.textContent = t(statusKey);
-}
-
-function paintChrome(): void {
-  if (aboutLink) {
-    aboutLink.textContent = t('aboutOpen');
-    aboutLink.setAttribute('href', '#/about');
-  }
+  statusEl.setAttribute('title', text);
+  statusEl.setAttribute('aria-label', text);
 }
 
 let renderId = 0;
@@ -101,8 +95,10 @@ async function start(): Promise<void> {
   if (chromeActions) {
     mountLanguageSwitch(chromeActions);
     mountHowTo(chromeActions);
+    // Language, help, then the status dot: the dot stays at the far right.
+    if (statusEl) chromeActions.append(statusEl);
   }
-  paintChrome();
+  paintStatus();
 
   // One audio element for the app, mounted outside `#view` so navigating never
   // interrupts playback (FR-5.5).
@@ -110,7 +106,6 @@ async function start(): Promise<void> {
   trackResume(sharedPlayer());
 
   onLanguageChange(() => {
-    paintChrome();
     paintStatus();
     // Never throw away a capture in progress just to change the wording.
     if (!isRecorderOpen()) void render(parseRoute(window.location.hash));

@@ -1,43 +1,34 @@
 import { switchLanguage } from '../i18n';
-import { LANGUAGES, currentLanguage, onLanguageChange, t } from '../strings';
+import { currentLanguage, onLanguageChange, t } from '../strings';
 import { el } from './dom';
 
 /**
- * ID/EN segmented control in the header (FR-7.3). The codes are language
- * names, not copy, so they are the same in both dictionaries.
+ * One compact button that flips between the two languages (FR-7.3). A
+ * segmented control costs three times the header room on a phone, and there
+ * are only two choices.
  */
 export function mountLanguageSwitch(target: HTMLElement): void {
-  if (target.querySelector('[data-testid="language-switch"]')) return;
+  if (target.querySelector('[data-testid="language-toggle"]')) return;
 
-  const group = el('div', {
-    class: 'lang-switch',
-    attrs: { role: 'group', 'data-testid': 'language-switch' },
+  const button = el('button', {
+    class: 'lang-toggle',
+    attrs: { type: 'button', 'data-testid': 'language-toggle' },
   });
-  target.append(group);
-
-  const buttons = new Map<string, HTMLButtonElement>();
-  for (const language of LANGUAGES) {
-    const button = el('button', {
-      class: 'lang-option',
-      attrs: {
-        type: 'button',
-        'data-testid': `language-${language}`,
-        'aria-pressed': 'false',
-      },
-      text: language.toUpperCase(),
-    });
-    button.addEventListener('click', () => void switchLanguage(language));
-    buttons.set(language, button);
-    group.append(button);
-  }
 
   const paint = (): void => {
-    group.setAttribute('aria-label', t('languageLabel'));
-    for (const [language, button] of buttons) {
-      button.setAttribute('aria-pressed', String(language === currentLanguage()));
-    }
+    const language = currentLanguage();
+    // The label names where the button will take you, not where you are.
+    const label = t(language === 'id' ? 'languageToEnglish' : 'languageToIndonesian');
+    button.textContent = language.toUpperCase();
+    button.setAttribute('aria-label', label);
+    button.setAttribute('title', label);
   };
+
+  button.addEventListener('click', () => {
+    void switchLanguage(currentLanguage() === 'id' ? 'en' : 'id');
+  });
 
   onLanguageChange(paint);
   paint();
+  target.append(button);
 }

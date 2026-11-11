@@ -189,8 +189,13 @@ test('the how-to icon opens a modal with the three steps, and it closes', async 
   await expect(dialog.locator('li').nth(1)).toContainText('rekam');
   await expect(dialog.locator('li').nth(2)).toContainText('Putar ulang');
 
-  await page.getByTestId('how-to-close').click();
+  // About is reached from here now, and tapping it dismisses the dialog.
+  await expect(page.getByTestId('about-link')).toHaveText('Tentang');
+  await page.getByTestId('about-link').click();
+  await expect(page).toHaveURL(/#\/about$/);
   await expect(dialog).toBeHidden();
+  await expect(page.getByTestId('about')).toContainText('Tanzil');
+  await page.getByTestId('back').click();
 
   // Escape closes it too, so the modal never traps a reader.
   await page.getByTestId('how-to-open').click();

@@ -23,19 +23,15 @@
           </svg>
           <h1>ngajiPlay</h1>
         </a>
-        <div class="chrome-actions" data-testid="chrome-actions"></div>
+        <div class="chrome-actions" data-testid="chrome-actions">
+          <span class="status" data-testid="status" data-state="booting" role="img">
+            <span class="dot" aria-hidden="true"></span>
+          </span>
+        </div>
       </div>
     </header>
 
     <main id="view" class="view"></main>
-
-    <footer class="foot">
-      <a class="foot-link" href="#/about" data-testid="about-link">Tentang</a>
-      <p class="status" data-testid="status" data-state="booting">
-        <span class="dot" aria-hidden="true"></span>
-        <span data-testid="status-text"></span>
-      </p>
-    </footer>
 
     <script type="module" src="/src/main.ts"></script>
   </body>

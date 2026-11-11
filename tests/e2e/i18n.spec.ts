@@ -28,12 +28,20 @@ test('the language switch repaints the app and survives a reload (FR-7.3)', asyn
     'aria-label',
     'Cari halaman atau surah',
   );
-  await expect(page.getByTestId('language-id')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByTestId('language-en')).toHaveAttribute('aria-pressed', 'false');
+  // One compact toggle showing the language in force, labelled with the switch.
+  await expect(page.getByTestId('language-toggle')).toHaveText('ID');
+  await expect(page.getByTestId('language-toggle')).toHaveAttribute(
+    'aria-label',
+    'Ganti ke bahasa Inggris',
+  );
 
-  await page.getByTestId('language-en').click();
+  await page.getByTestId('language-toggle').click();
 
-  await expect(page.getByTestId('language-en')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('language-toggle')).toHaveText('EN');
+  await expect(page.getByTestId('language-toggle')).toHaveAttribute(
+    'aria-label',
+    'Switch to Indonesian',
+  );
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   await expect(page.getByTestId('search-input')).toHaveAttribute(
     'aria-label',
@@ -54,7 +62,7 @@ test('the language switch repaints the app and survives a reload (FR-7.3)', asyn
     'aria-label',
     'Search a page or surah',
   );
-  await expect(page.getByTestId('language-en')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('language-toggle')).toHaveText('EN');
 
   // The one-line pitch lives in the how-to modal now, in the chosen language.
   await page.getByTestId('how-to-open').click();
@@ -62,7 +70,7 @@ test('the language switch repaints the app and survives a reload (FR-7.3)', asyn
   await page.getByTestId('how-to-close').click();
 
   // And back, with the Indonesian copy intact.
-  await page.getByTestId('language-id').click();
+  await page.getByTestId('language-toggle').click();
   await expect(page.getByTestId('search-input')).toHaveAttribute(
     'aria-label',
     'Cari halaman atau surah',
@@ -78,7 +86,7 @@ test('the language switch repaints the app and survives a reload (FR-7.3)', asyn
 
 test('English screens fit a 390px phone without being cut off', async ({ page }) => {
   await page.goto('/');
-  await page.getByTestId('language-en').click();
+  await page.getByTestId('language-toggle').click();
 
   // How-it-works lives behind the header icon now; it must render in English.
   await page.getByTestId('how-to-open').click();
@@ -132,7 +140,7 @@ test('the About screen credits Tanzil verbatim and ships the OFL notice (FR-7.5)
   expect(licence.status()).toBe(200);
   expect(await licence.text()).toContain('SIL OPEN FONT LICENSE');
 
-  await page.getByTestId('language-en').click();
+  await page.getByTestId('language-toggle').click();
   await expect(page.getByTestId('tanzil-link')).toHaveText('Open tanzil.net');
   await expect(page.getByTestId('ofl-link')).toHaveText('Read the OFL licence');
   expect(await page.getByTestId('copyright').textContent()).toBe(bundled);
@@ -141,13 +149,13 @@ test('the About screen credits Tanzil verbatim and ships the OFL notice (FR-7.5)
 test('the desktop layout keeps its reading column and safe spacing (FR-7.4)', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/#/about');
-  await page.getByTestId('language-en').click();
+  await page.getByTestId('language-toggle').click();
 
   const column = await page.locator('.view').evaluate((node) => node.getBoundingClientRect().width);
   expect(column).toBeLessThanOrEqual(720);
   await noSidewaysScroll(page);
 
-  const target = await page.getByTestId('language-en').evaluate((node) => {
+  const target = await page.getByTestId('language-toggle').evaluate((node) => {
     const rect = node.getBoundingClientRect();
     return { width: rect.width, height: rect.height };
   });

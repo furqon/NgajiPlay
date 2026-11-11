@@ -76,6 +76,9 @@ test('service worker installs and the shell reports itself ready offline', async
   await page.goto('/');
   await waitForController(page);
   await expect(page.getByTestId('status')).toHaveAttribute('data-state', 'ready');
+  // The dot says nothing on its own; the sentence is its tooltip and its name.
+  await expect(page.getByTestId('status')).toHaveAttribute('title', 'Siap dipakai offline');
+  await expect(page.getByTestId('status')).toHaveAttribute('aria-label', 'Siap dipakai offline');
 
   const cached = await page.evaluate(async () => {
     const names = await caches.keys();

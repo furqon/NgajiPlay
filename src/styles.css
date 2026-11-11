@@ -75,38 +75,30 @@ h1 {
   text-decoration: none;
 }
 
-/* --- language switch ---------------------------------------------------- */
+/* --- header controls: language, help, status ---------------------------- */
 
-.lang-switch {
+.chrome-actions {
   display: flex;
+  align-items: center;
   gap: 2px;
-  padding: 2px;
-  border: 1px solid var(--rule);
-  border-radius: 999px;
-  background: #fff;
 }
 
-.lang-option {
+.lang-toggle {
   min-width: 44px;
   min-height: 44px;
-  padding: 0 8px;
+  padding: 0 6px;
   border: 0;
-  border-radius: 999px;
+  border-radius: 10px;
   background: transparent;
-  color: var(--muted);
+  color: var(--deep);
   font: inherit;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   cursor: pointer;
 }
 
-.lang-option[aria-pressed='true'] {
-  background: var(--deep);
-  color: #fbf8f1;
-}
-
-.lang-option:focus-visible {
+.lang-toggle:focus-visible {
   outline: 3px solid var(--deep);
   outline-offset: 2px;
 }
@@ -123,58 +115,34 @@ h1 {
   padding: 2px 16px 16px;
 }
 
-.foot {
-  display: grid;
-  justify-items: center;
-  gap: 2px;
-  padding: 0 16px 14px;
-}
-
-.foot-link {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  color: var(--deep);
-  font-size: 0.88rem;
-  text-decoration: none;
-}
-
-.foot-link:hover {
-  text-decoration: underline;
-}
-
-.foot-link:focus-visible {
-  outline: 3px solid var(--deep);
-  outline-offset: 2px;
-}
-
-.tagline {
-  margin: 0 0 12px;
-  max-width: 42ch;
-  color: var(--muted);
-  font-size: 0.9rem;
-}
-
+/*
+ * The status is a dot, not a sentence: offline, first load and unsupported are
+ * rare, and a full-width pill for them crowded the header. The text is the
+ * hover tooltip and the accessible name.
+ */
 .status {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
   margin: 0;
-  padding: 0.3rem 0.75rem;
-  border-radius: 999px;
-  background: #fff;
-  border: 1px solid var(--rule);
-  font-size: 0.8rem;
-  color: var(--muted);
-  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: help;
 }
 
 .dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: var(--muted);
   flex: none;
+}
+
+.status[data-state='noSw'] .dot {
+  background: #a3352a;
 }
 
 .status[data-state='ready'] .dot {
@@ -559,6 +527,13 @@ h1 {
   font-size: 0.92rem;
 }
 
+.how-to-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
 .how-to-close {
   min-height: 44px;
   padding: 0 20px;
@@ -571,9 +546,26 @@ h1 {
   cursor: pointer;
 }
 
-.how-to-close:focus-visible {
+.how-to-close:focus-visible,
+.how-to-about:focus-visible {
   outline: 3px solid var(--deep);
   outline-offset: 2px;
+}
+
+/* About moved in here with the pitch: one place for the quiet information. */
+.how-to-about {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 10px;
+  color: var(--deep);
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.how-to-about:hover {
+  text-decoration: underline;
 }
 
 /* --- surah index -------------------------------------------------------- */
@@ -592,8 +584,9 @@ h1 {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
   gap: 4px;
-  /* A fixed window: the list scrolls itself, the search box stays in place. */
-  max-height: 40vh;
+  /* A fixed window: the list scrolls itself, the search box stays in place.
+     Tall enough to fill the screen instead of leaving a dead gap below. */
+  max-height: min(58vh, 560px);
   margin: 0;
   padding: 0;
   list-style: none;

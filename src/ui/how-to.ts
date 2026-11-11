@@ -40,6 +40,17 @@ export function mountHowTo(target: HTMLElement): void {
     });
     close.addEventListener('click', () => dialog.close());
 
+    // About lives here now: quiet information behind the same icon, instead of
+    // a footer link on every screen.
+    const about = el('a', {
+      class: 'how-to-about',
+      attrs: { href: '#/about', 'data-testid': 'about-link' },
+      text: t('aboutOpen'),
+    });
+    // Leaving the route while the dialog is open would keep it on top of the
+    // About screen, so close it first.
+    about.addEventListener('click', () => dialog.close());
+
     dialog.replaceChildren(
       el('h2', { class: 'how-to-title', attrs: { id: 'how-to-title' }, text: t('hintTitle') }),
       // The one-line pitch used to sit under the search box; here it is read
@@ -52,7 +63,7 @@ export function mountHowTo(target: HTMLElement): void {
         el('li', { text: t('hintStep2') }),
         el('li', { text: t('hintStep3') }),
       ),
-      close,
+      el('div', { class: 'how-to-actions' }, close, about),
     );
   };
 
