@@ -86,10 +86,13 @@ Static hosting over HTTPS, no backend. Two paths are wired up.
 
 ### GitHub Pages (the repo is public)
 
-`.github/workflows/pages.yml` builds on every push to `main` and publishes `dist/`.
-Enable it once: **Settings → Pages → Source: GitHub Actions**. After that push, or
-run the workflow from the Actions tab, and the app is at
-`https://<user>.github.io/NgajiPlay/`.
+Live at **https://furqon.github.io/NgajiPlay/**. `.github/workflows/pages.yml` builds
+on every push to `main` and publishes `dist/`; Pages is enabled with
+**Settings → Pages → Source: GitHub Actions**.
+
+Do not add the **Static HTML** starter workflow that the Pages settings page
+suggests — it publishes the repository root, which serves the raw `index.html`
+(white screen) and competes with this workflow for the same deployment.
 
 A project site lives under `/<repo>/`, so the workflow builds with
 `BASE_PATH=/NgajiPlay/`. Everything that used to assume the site root now follows
