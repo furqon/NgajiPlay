@@ -1,6 +1,14 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { ayahText, ayahsOnPage, findSurahs, page, slicesOnPage, surah } from '../../src/data/quran';
+import {
+  ayahText,
+  ayahsOnPage,
+  findSurahs,
+  page,
+  slicesOnPage,
+  startPageOfSurah,
+  surah,
+} from '../../src/data/quran';
 import type { QuranData } from '../../src/types';
 
 const data: QuranData = JSON.parse(
@@ -64,6 +72,23 @@ describe('generated quran.json', () => {
     expect(findSurahs(data, '0')).toEqual([]);
     expect(findSurahs(data, '999')).toEqual([]);
     expect(findSurahs(data, '   ')).toEqual([]);
+  });
+
+  it('finds the page every surah opens on, which the index links to', () => {
+    expect(startPageOfSurah(data, 1)).toBe(1);
+    expect(startPageOfSurah(data, 2)).toBe(2);
+    expect(startPageOfSurah(data, 114)).toBe(604);
+
+    // Every surah resolves, its first ayah really is on that page, and the
+    // index can only march forward through the mushaf.
+    let previous = 0;
+    for (const entry of data.surahs) {
+      const start = startPageOfSurah(data, entry.n);
+      expect(start, `surah ${entry.n}`).toBeGreaterThanOrEqual(previous);
+      previous = start;
+      const first = slicesOnPage(data, start).find((slice) => slice.surah === entry.n);
+      expect(first?.ayahStart, `surah ${entry.n} starts at ayah 1`).toBe(1);
+    }
   });
 
   it('rejects out-of-range lookups instead of returning undefined', () => {

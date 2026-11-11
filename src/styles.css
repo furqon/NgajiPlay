@@ -498,38 +498,62 @@ h1 {
   border-color: var(--ok);
 }
 
-/* --- first run ---------------------------------------------------------- */
+/* --- how it works ------------------------------------------------------- */
 
-.hint {
-  display: grid;
-  gap: 8px;
-  margin: 0 0 12px;
-  padding: 12px;
-  border: 1px solid #cfe0d6;
-  border-inline-start: 4px solid var(--deep);
-  border-radius: 14px;
-  background: #f4f8f5;
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--rule);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--deep);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
 }
 
-.hint-title {
-  margin: 0;
-  font-size: 0.95rem;
+.icon-button:focus-visible {
+  outline: 3px solid var(--deep);
+  outline-offset: 2px;
+}
+
+.how-to {
+  width: min(420px, calc(100vw - 32px));
+  max-height: 80vh;
+  overflow: auto;
+  padding: 18px;
+  border: 1px solid var(--rule);
+  border-radius: 16px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.how-to::backdrop {
+  background: rgb(31 36 33 / 45%);
+}
+
+.how-to-title {
+  margin: 0 0 10px;
+  font-size: 1.05rem;
   font-weight: 650;
 }
 
-.hint-steps {
+.how-to-steps {
   display: grid;
-  gap: 4px;
-  margin: 0;
+  gap: 6px;
+  margin: 0 0 16px;
   padding-inline-start: 22px;
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.92rem;
 }
 
-.hint-dismiss {
-  justify-self: start;
+.how-to-close {
   min-height: 44px;
-  padding: 0 18px;
+  padding: 0 20px;
   border: 1px solid var(--deep);
   border-radius: 999px;
   background: var(--deep);
@@ -539,9 +563,69 @@ h1 {
   cursor: pointer;
 }
 
-.hint-dismiss:focus-visible {
+.how-to-close:focus-visible {
   outline: 3px solid var(--deep);
   outline-offset: 2px;
+}
+
+/* --- surah index -------------------------------------------------------- */
+
+.surah-index {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule);
+}
+
+.surah-index-title {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.surah-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 4px;
+  max-height: 52vh;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.surah-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: #fff;
+  color: inherit;
+  font-size: 0.86rem;
+  text-decoration: none;
+}
+
+.surah-link:hover {
+  border-color: #cfc6ae;
+}
+
+.surah-link:focus-visible {
+  outline: 3px solid var(--deep);
+  outline-offset: 2px;
+}
+
+.surah-number {
+  min-width: 1.7em;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.surah-name {
+  overflow-wrap: anywhere;
 }
 
 /* --- library ------------------------------------------------------------ */

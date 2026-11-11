@@ -60,8 +60,15 @@ test('English screens fit a 390px phone without being cut off', async ({ page })
   await page.goto('/');
   await page.getByTestId('language-en').click();
 
-  // The first-run hint is on this screen too, and its longest step wraps.
-  await expect(page.getByTestId('first-run-hint')).toContainText('How it works');
+  // How-it-works lives behind the header icon now; it must render in English.
+  await page.getByTestId('how-to-open').click();
+  await expect(page.getByTestId('how-to')).toContainText('How it works');
+  await page.getByTestId('how-to-close').click();
+
+  // The surah index uses the English names when English is chosen.
+  await expect(page.locator('[data-testid="surah-link"][data-surah="108"]')).toContainText(
+    'Al-Kawthar',
+  );
   await noSidewaysScroll(page);
 
   await page.getByTestId('library-link').click();

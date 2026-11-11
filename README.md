@@ -10,8 +10,9 @@ Spec: [docs/REQ.md](docs/REQ.md) · Plan: [docs/TASKS.md](docs/TASKS.md)
 Phase 7 — the installable shell, the Madani data layer, search + page view,
 recording per surah slice, the library (rename, delete, export, storage),
 playback with repeat off/one/all/2/3/5/10 and resume, a page that follows the
-recording with the playing ayahs highlighted, an ID/EN switch, a first-run
-hint, and an About screen carrying the Tanzil and OFL notices. Offline/install/release
+recording with the playing ayahs highlighted, an ID/EN switch, a browsable
+surah index, a how-it-works modal, and an About screen carrying the Tanzil and
+OFL notices. Offline/install/release
 hardening is next (Phase 8).
 
 ## Commands

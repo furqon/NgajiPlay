@@ -6,6 +6,7 @@ import { parseRoute, type Route } from './router';
 import { listClips } from './store/db';
 import { currentLanguage, fill, onLanguageChange, t } from './strings';
 import { renderAbout } from './ui/about-view';
+import { mountHowTo } from './ui/how-to';
 import { renderLibrary } from './ui/library-view';
 import { mountLanguageSwitch } from './ui/language-switch';
 import { renderPage } from './ui/page-view';
@@ -97,7 +98,10 @@ async function start(): Promise<void> {
   // The stored language is applied before the first paint (FR-7.3).
   await initLanguage();
   document.documentElement.lang = currentLanguage();
-  if (chromeActions) mountLanguageSwitch(chromeActions);
+  if (chromeActions) {
+    mountLanguageSwitch(chromeActions);
+    mountHowTo(chromeActions);
+  }
   paintChrome();
 
   // One audio element for the app, mounted outside `#view` so navigating never

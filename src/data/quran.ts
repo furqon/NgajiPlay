@@ -72,6 +72,14 @@ export function ayahText(data: QuranData, surahNumber: number, ayah: number): st
   return text;
 }
 
+/** The page a surah opens on: the page that holds its first ayah. */
+export function startPageOfSurah(data: QuranData, number: number): number {
+  const entry = surah(data, number);
+  const found = data.pages.find((item) => item.from <= entry.start && entry.start <= item.to);
+  if (!found) throw new RangeError(`surah ${number} starts on no page`);
+  return found.number;
+}
+
 /** Finds surahs by number or by Indonesian/English name (FR-1.2). */
 export function findSurahs(data: QuranData, query: string): Surah[] {
   const trimmed = query.trim();

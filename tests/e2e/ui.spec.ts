@@ -170,61 +170,51 @@ test('a recorded slice is marked as recorded', async ({ page }) => {
   await expect(slice.locator('.badge')).toHaveText('Sudah direkam');
 });
 
-test('a first-run hint explains record → play → follow, and stays dismissed', async ({ page }) => {
+test('the how-to icon opens a modal with the three steps, and it closes', async ({ page }) => {
   await page.goto('/');
 
-  const hint = page.getByTestId('first-run-hint');
-  await expect(hint).toBeVisible();
-  await expect(hint).toContainText('Cara pakai');
-  await expect(hint.locator('li')).toHaveCount(3);
-  await expect(hint.locator('li').nth(0)).toContainText('Cari halaman');
-  await expect(hint.locator('li').nth(1)).toContainText('rekam');
-  await expect(hint.locator('li').nth(2)).toContainText('Putar ulang');
-
-  await page.getByTestId('hint-dismiss').click();
-  await expect(hint).toHaveCount(0);
-
-  // Dismissed for good: the flag is in the store, so a reload cannot bring it
-  // back. (The write is async; assert what is stored, not what was painted.)
-  await expect
-    .poll(() =>
-      page.evaluate(async (modulePath) => {
-        const db = await import(/* @vite-ignore */ modulePath);
-        return (await db.getSetting('hintDismissed', false)) as boolean;
-      }, DB_MODULE),
-    )
-    .toBe(true);
-  await page.reload();
+  // Nothing is drawn over the search box until it is asked for.
+  const dialog = page.getByTestId('how-to');
+  await expect(dialog).toBeHidden();
   await expect(page.getByTestId('first-run-hint')).toHaveCount(0);
-  await page.goto('/#/p/2');
-  await page.getByTestId('back').click();
-  await expect(page.getByTestId('first-run-hint')).toHaveCount(0);
+
+  await page.getByTestId('how-to-open').click();
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText('Cara pakai');
+  await expect(dialog.locator('li')).toHaveCount(3);
+  await expect(dialog.locator('li').nth(0)).toContainText('Cari halaman');
+  await expect(dialog.locator('li').nth(1)).toContainText('rekam');
+  await expect(dialog.locator('li').nth(2)).toContainText('Putar ulang');
+
+  await page.getByTestId('how-to-close').click();
+  await expect(dialog).toBeHidden();
+
+  // Escape closes it too, so the modal never traps a reader.
+  await page.getByTestId('how-to-open').click();
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
 });
 
-test('the hint is gone once a recording exists', async ({ page }) => {
+test('the search screen lists all 114 surahs, each opening on its first page', async ({ page }) => {
   await page.goto('/');
-  await page.evaluate(async (modulePath) => {
-    const db = await import(/* @vite-ignore */ modulePath);
-    const blob = new Blob(['seed'], { type: 'audio/webm;codecs=opus' });
-    await db.putClip(
-      {
-        id: db.clipId(2, 2),
-        page: 2,
-        surah: 2,
-        ayahStart: 1,
-        ayahEnd: 5,
-        mimeType: blob.type,
-        bytes: blob.size,
-        durationMs: 1000,
-        createdAt: Date.now(),
-        displayName: 'p002-s002-al-baqarah',
-      },
-      blob,
-    );
-  }, DB_MODULE);
 
-  await page.goto('/');
-  await expect(page.getByTestId('first-run-hint')).toHaveCount(0);
+  const links = page.getByTestId('surah-link');
+  await expect(links).toHaveCount(114);
+  await expect(links.first()).toContainText('Al-Fatihah');
+  await expect(links.first()).toHaveAttribute('href', '#/p/1');
+  await expect(links.last()).toContainText('An-Nas');
+  await expect(links.last()).toHaveAttribute('href', '#/p/604');
+
+  // Al-Baqarah opens on page 2; An-Nas on the last page of the mushaf.
+  await page.locator('[data-testid="surah-link"][data-surah="2"]').click();
+  await expect(page).toHaveURL(/#\/p\/2$/);
+  await expect(page.getByTestId('surah-header')).toContainText('Al-Baqarah');
+
+  await page.getByTestId('back').click();
+  await page.locator('[data-testid="surah-link"][data-surah="114"]').click();
+  await expect(page).toHaveURL(/#\/p\/604$/);
+  await expect(page.getByTestId('surah-header').last()).toContainText('An-Nas');
 });
 
 test('the page view fits a 390px phone without sideways scrolling', async ({ page }) => {
