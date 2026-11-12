@@ -8,22 +8,33 @@ import { installGuidanceKey } from './install';
  * for someone who has already learned the flow. A native `<dialog>` gives the
  * focus trap, Escape handling and backdrop for free.
  */
-export function mountHowTo(target: HTMLElement): void {
+export function mountHowTo(target: HTMLElement, label?: string): void {
   if (target.querySelector('[data-testid="how-to-open"]')) return;
 
-  const open = el(
-    'button',
-    {
-      class: 'icon-button',
-      attrs: {
-        type: 'button',
-        'data-testid': 'how-to-open',
-        'aria-label': t('hintTitle'),
-        title: t('hintTitle'),
-      },
-    },
-    el('span', { attrs: { 'aria-hidden': 'true' }, text: '?' }),
-  );
+  const open = label
+    ? el('button', {
+        class: 'settings-button',
+        attrs: {
+          type: 'button',
+          'data-testid': 'how-to-open',
+          'aria-label': label,
+          title: label,
+        },
+        text: label,
+      })
+    : el(
+        'button',
+        {
+          class: 'icon-button',
+          attrs: {
+            type: 'button',
+            'data-testid': 'how-to-open',
+            'aria-label': t('hintTitle'),
+            title: t('hintTitle'),
+          },
+        },
+        el('span', { attrs: { 'aria-hidden': 'true' }, text: '?' }),
+      );
 
   const dialog = el('dialog', {
     class: 'how-to',
@@ -69,6 +80,16 @@ export function mountHowTo(target: HTMLElement): void {
         class: 'how-to-install',
         attrs: { 'data-testid': 'install-guidance' },
         text: t(installGuidanceKey()),
+      }),
+      el('p', {
+        class: 'how-to-install',
+        attrs: { 'data-testid': 'backup-guidance' },
+        text: t('hintBackup'),
+      }),
+      el('p', {
+        class: 'how-to-install',
+        attrs: { 'data-testid': 'import-guidance' },
+        text: t('hintRestore'),
       }),
       el('div', { class: 'how-to-actions' }, close, about),
     );

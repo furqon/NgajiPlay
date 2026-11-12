@@ -39,26 +39,11 @@ test('records a clip, saves it, survives a reload and plays back', async ({ page
   await expect(page.getByTestId('slice')).toHaveAttribute('data-recorded', 'false');
 
   await page.getByTestId('record').first().click();
-  // FR-2.5: the slice's ayahs stay visible inside the recorder.
-  await expect(page.getByTestId('recorder-text')).toContainText('Al-Baqarah');
   await expect(page.getByTestId('recorder-title')).toContainText('Ayat 1–5');
-
-  // The ayahs stay visible (FR-2.5) but as a compact aid, not a second page:
-  // smaller type than the measured page and a ceiling so the buttons stay near.
-  const aid = page.getByTestId('recorder-text');
-  const type = await aid.locator('.ayahs').first().evaluate((node) => {
-    const style = getComputedStyle(node);
-    return { size: style.fontSize, line: style.lineHeight };
-  });
-  expect(type.size).toBe('19px');
-  expect(type.line).toBe('33.25px');
-  const box = await aid.evaluate((node) => ({
-    height: node.getBoundingClientRect().height,
-    limit: window.innerHeight * 0.34 + 2,
-    scrolls: getComputedStyle(node).overflowY,
-  }));
-  expect(box.scrolls).toBe('auto');
-  expect(box.height).toBeLessThanOrEqual(box.limit);
+  // The page above already shows the ayahs; the panel adds no second copy.
+  await expect(page.getByTestId('recorder').locator('.ayah')).toHaveCount(0);
+  await expect(page.getByTestId('recorder-text')).toHaveCount(0);
+  await expect(page.getByTestId('mushaf').locator('.ayah')).not.toHaveCount(0);
 
   await page.getByTestId('record-start').click();
   await expect(page.getByTestId('record-timer')).toHaveText(/^0:0[1-9]$/);

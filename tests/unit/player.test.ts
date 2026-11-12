@@ -65,6 +65,7 @@ function clip(id: string, overrides: Partial<Clip> = {}): Clip {
     bytes: 2048,
     durationMs: 2_000,
     createdAt: 0,
+    updatedAt: 0,
     displayName: `Rekaman ${id}`,
     ...overrides,
   };
@@ -208,6 +209,46 @@ describe('Player', () => {
 
     expect(player.state.clip?.id).toBe('1:1');
     expect(player.state.playing).toBe(true);
+  });
+
+  it('repeats a temporary playlist as a whole, then stops after the last pass', async () => {
+    const clips = [clip('1:1'), clip('2:2')];
+    const { player, audio } = setup(clips);
+    await player.play(clips, '1:1', { playlistRepeat: 2 });
+
+    expect(player.state.playlistRepeat).toBe(2);
+    expect(player.state.playlistPass).toBe(1);
+
+    audio.end();
+    await Promise.resolve();
+    expect(player.state.clip?.id).toBe('2:2');
+
+    audio.end();
+    await Promise.resolve();
+    expect(player.state.clip?.id).toBe('1:1');
+    expect(player.state.playlistPass).toBe(2);
+    expect(player.state.playing).toBe(true);
+
+    audio.end();
+    await Promise.resolve();
+    expect(player.state.clip?.id).toBe('2:2');
+
+    audio.end();
+    await Promise.resolve();
+    expect(player.state.clip?.id).toBe('2:2');
+    expect(player.state.playing).toBe(false);
+  });
+
+  it('a normal library play resets the temporary-playlist repeat to once', async () => {
+    const clips = [clip('1:1'), clip('2:2')];
+    const { player } = setup(clips);
+
+    await player.play(clips, '1:1', { playlistRepeat: 3 });
+    expect(player.state.playlistRepeat).toBe(3);
+
+    await player.play(clips, '2:2');
+    expect(player.state.playlistRepeat).toBe(1);
+    expect(player.state.playlistPass).toBe(1);
   });
 
   it('repeat 2 plays each clip of a three-clip playlist twice, then advances', async () => {

@@ -4,6 +4,9 @@ import {
   ayahText,
   ayahsOnPage,
   findSurahs,
+  juzEndPage,
+  juzForPage,
+  juzStartPage,
   page,
   slicesOnPage,
   startPageOfSurah,
@@ -89,6 +92,33 @@ describe('generated quran.json', () => {
       const first = slicesOnPage(data, start).find((slice) => slice.surah === entry.n);
       expect(first?.ayahStart, `surah ${entry.n} starts at ayah 1`).toBe(1);
     }
+  });
+
+  it('maps the 30 juz onto contiguous Madani page ranges (10C.2)', () => {
+    expect(juzStartPage(1)).toBe(1);
+    expect(juzStartPage(15)).toBe(282);
+    expect(juzStartPage(30)).toBe(582);
+    expect(juzEndPage(1)).toBe(21);
+    expect(juzEndPage(30)).toBe(604);
+    expect(juzForPage(2)).toBe(1);
+    expect(juzForPage(604)).toBe(30);
+
+    // Every juz owns every one of its pages, with no gap between neighbours.
+    let previousEnd = 0;
+    for (let juz = 1; juz <= 30; juz += 1) {
+      expect(juzStartPage(juz), `juz ${juz} starts where the last one ended`).toBe(
+        previousEnd + 1,
+      );
+      for (let number = juzStartPage(juz); number <= juzEndPage(juz); number += 1) {
+        expect(juzForPage(number), `page ${number}`).toBe(juz);
+      }
+      previousEnd = juzEndPage(juz);
+    }
+    expect(previousEnd).toBe(604);
+
+    expect(() => juzStartPage(0)).toThrow(RangeError);
+    expect(() => juzStartPage(31)).toThrow(RangeError);
+    expect(() => juzForPage(605)).toThrow(RangeError);
   });
 
   it('rejects out-of-range lookups instead of returning undefined', () => {

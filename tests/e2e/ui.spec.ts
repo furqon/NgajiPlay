@@ -48,6 +48,9 @@ test('page 2 renders with the measured typography and marks the surah boundary',
   // One slice on the page, with its state (FR-1.5).
   await expect(page.getByTestId('slice')).toHaveCount(1);
   await expect(page.getByTestId('slice')).toContainText('Ayat 1–5');
+
+  // The running header names the juz and the surah the page opens with.
+  await expect(page.getByTestId('page-juz')).toHaveText('Juz 1 · Al-Baqarah');
 });
 
 test('page 604 has three surah headers and no doubled basmala', async ({ page }) => {
@@ -167,6 +170,7 @@ test('a recorded slice is marked as recorded', async ({ page }) => {
         bytes: blob.size,
         durationMs: 1000,
         createdAt: Date.now(),
+        updatedAt: Date.now(),
         displayName: 'p002-s002-al-baqarah',
       },
       blob,
@@ -179,10 +183,10 @@ test('a recorded slice is marked as recorded', async ({ page }) => {
   await expect(slice.locator('.badge')).toHaveText('Sudah direkam');
 });
 
-test('the how-to icon opens a modal with the three steps, and it closes', async ({ page }) => {
-  await page.goto('/');
+test('help lives in Settings and opens a modal with the three steps', async ({ page }) => {
+  await page.goto('/#/settings');
 
-  // Nothing is drawn over the search box until it is asked for.
+  // Nothing is drawn until it is asked for.
   const dialog = page.getByTestId('how-to');
   await expect(dialog).toBeHidden();
   await expect(page.getByTestId('first-run-hint')).toHaveCount(0);
@@ -204,7 +208,8 @@ test('the how-to icon opens a modal with the three steps, and it closes', async 
   await expect(page).toHaveURL(/#\/about$/);
   await expect(dialog).toBeHidden();
   await expect(page.getByTestId('about')).toContainText('Tanzil');
-  await page.getByTestId('back').click();
+  // Back returns to the index; help lives in Settings, so go there again.
+  await page.goto('/#/settings');
 
   // Escape closes it too, so the modal never traps a reader.
   await page.getByTestId('how-to-open').click();
@@ -219,10 +224,10 @@ test('the search screen lists all 114 surahs, each opening on its first page', a
   const links = page.getByTestId('surah-link');
   await expect(links).toHaveCount(114);
 
-  // The index is fixed at the top and the search box sits below it.
+  // Search is the first thing on the screen; the index sits below the tabs.
   const index = await page.getByTestId('surah-index').boundingBox();
   const input = await page.getByTestId('search-input').boundingBox();
-  expect(input!.y).toBeGreaterThanOrEqual(index!.y + index!.height - 1);
+  expect(input!.y).toBeLessThan(index!.y);
   await expect(links.first()).toContainText('Al-Fatihah');
   await expect(links.first()).toHaveAttribute('href', '#/p/1');
   await expect(links.last()).toContainText('An-Nas');
@@ -252,4 +257,89 @@ test('the page view fits a 390px phone without sideways scrolling', async ({ pag
   // NFR-6: the pager controls are at least 44px.
   const step = await page.getByTestId('page-next').boundingBox();
   expect(step?.height ?? 0).toBeGreaterThanOrEqual(44);
+});
+
+test('the bottom navigation marks the active tab and reaches every screen', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+
+  await expect(page.getByTestId('bottom-nav')).toBeVisible();
+  await expect(page.getByTestId('nav-search')).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByTestId('nav-search')).toContainText('Cari');
+
+  await page.getByTestId('library-link').click();
+  await expect(page).toHaveURL(/#\/library$/);
+  await expect(page.getByTestId('library-link')).toHaveAttribute('aria-current', 'page');
+
+  await page.getByTestId('settings-link').click();
+  await expect(page).toHaveURL(/#\/settings$/);
+  await expect(page.getByTestId('settings-link')).toHaveAttribute('aria-current', 'page');
+
+  await page.getByTestId('nav-mushaf').click();
+  await expect(page).toHaveURL(/#\/p\/\d+$/);
+  await expect(page.getByTestId('nav-mushaf')).toHaveAttribute('aria-current', 'page');
+
+  // Every tab is a 44px touch target.
+  const box = await page.getByTestId('nav-search').boundingBox();
+  expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
+});
+
+test('the page label opens a jump dialog with a slider and juz shortcuts', async ({ page }) => {
+  await page.goto('/#/p/2');
+
+  await page.getByTestId('page-number').click();
+  await expect(page.getByTestId('page-jump')).toBeVisible();
+  await expect(page.getByTestId('page-jump-input')).toHaveValue('2');
+
+  await page.getByTestId('page-jump-input').fill('42');
+  await expect(page.getByTestId('page-jump-preview')).toHaveText('Halaman 42 dari 604');
+  await page.getByTestId('page-jump-go').click();
+  await expect(page).toHaveURL(/#\/p\/42$/);
+  await expect(page.getByTestId('page-number')).toHaveText('Halaman 42 dari 604');
+
+  // Out-of-range input is refused without leaving the page.
+  await page.getByTestId('page-number').click();
+  await page.getByTestId('page-jump-input').fill('605');
+  await page.getByTestId('page-jump-go').click();
+  await expect(page.getByTestId('page-jump-error')).toHaveText(
+    'Nomor halaman harus 1 sampai 604.',
+  );
+  await expect(page).toHaveURL(/#\/p\/42$/);
+
+  // A juz shortcut drives the same field, and the slider follows it.
+  await page.getByTestId('page-jump-juz-30').click();
+  await expect(page.getByTestId('page-jump-input')).toHaveValue('582');
+  await expect(page.getByTestId('page-jump-slider')).toHaveValue('582');
+  await page.getByTestId('page-jump-go').click();
+  await expect(page.getByTestId('page-number')).toHaveText('Halaman 582 dari 604');
+  await expect(page.getByTestId('page-juz')).toHaveText('Juz 30 · An-Naba');
+});
+
+test('the font resizer scales the Arabic text and remembers the choice', async ({ page }) => {
+  await page.goto('/#/p/2');
+  const ayahs = page.locator('.ayahs').first();
+  const fontSize = (): Promise<string> =>
+    ayahs.evaluate((node) => getComputedStyle(node).fontSize);
+  const lineHeight = (): Promise<string> =>
+    ayahs.evaluate((node) => getComputedStyle(node).lineHeight);
+
+  expect(await fontSize()).toBe('26px');
+  expect(await lineHeight()).toBe('52px');
+
+  await page.getByTestId('font-larger').click();
+  expect(await fontSize()).toBe('28px');
+  expect(await lineHeight()).toBe('56px');
+
+  // The choice survives a reload.
+  await page.reload();
+  expect(await fontSize()).toBe('28px');
+
+  await page.getByTestId('font-smaller').click();
+  expect(await fontSize()).toBe('26px');
+
+  // 22px is the floor; extra taps stop there instead of shrinking forever.
+  await page.getByTestId('font-smaller').click();
+  await page.getByTestId('font-smaller').click();
+  await page.getByTestId('font-smaller').click();
+  expect(await fontSize()).toBe('22px');
 });

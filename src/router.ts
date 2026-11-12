@@ -2,6 +2,7 @@ export type Route =
   | { name: 'search' }
   | { name: 'page'; page: number }
   | { name: 'library' }
+  | { name: 'settings' }
   | { name: 'about' };
 
 /**
@@ -10,11 +11,13 @@ export type Route =
  */
 const PAGE_ROUTE = /^#\/p\/(\d+)$/;
 const LIBRARY_ROUTE = /^#\/library$/;
+const SETTINGS_ROUTE = /^#\/settings$/;
 const ABOUT_ROUTE = /^#\/about$/;
 
 export function parseRoute(hash: string): Route {
   const normalised = hash.replace(/\/+$/, '');
   if (LIBRARY_ROUTE.test(normalised)) return { name: 'library' };
+  if (SETTINGS_ROUTE.test(normalised)) return { name: 'settings' };
   if (ABOUT_ROUTE.test(normalised)) return { name: 'about' };
   const match = PAGE_ROUTE.exec(normalised);
   if (!match?.[1]) return { name: 'search' };
@@ -29,6 +32,10 @@ export function libraryHref(): string {
   return '#/library';
 }
 
+export function settingsHref(): string {
+  return '#/settings';
+}
+
 export function aboutHref(): string {
   return '#/about';
 }
@@ -36,5 +43,7 @@ export function aboutHref(): string {
 export function navigate(route: Route): void {
   if (route.name === 'page') window.location.hash = pageHref(route.page);
   else if (route.name === 'library') window.location.hash = libraryHref();
+  else if (route.name === 'settings') window.location.hash = settingsHref();
+  else if (route.name === 'about') window.location.hash = aboutHref();
   else window.location.hash = '#/';
 }

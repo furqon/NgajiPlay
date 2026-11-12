@@ -98,6 +98,19 @@ test('leaving the page offers a way back without pausing', async ({ page }) => {
   await expect(follow).toHaveText('Buka halaman yang diputar');
   await expect(page.getByTestId('player-toggle')).toHaveText('Jeda');
 
+  // The follow strip and the seek bar keep their own full-width rows on a phone.
+  const wide = await page.evaluate(() => ({
+    viewport: window.innerWidth,
+    page: document.documentElement.scrollWidth,
+  }));
+  expect(wide.viewport).toBe(390);
+  expect(wide.page).toBeLessThanOrEqual(wide.viewport);
+  for (const id of ['follow', 'player-scrubber', 'player-toggle']) {
+    const box = await page.getByTestId(id).boundingBox();
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(wide.viewport);
+  }
+
   await follow.click();
 
   await expect(page).toHaveURL(/#\/p\/1$/);

@@ -1,11 +1,14 @@
-import { loadQuran, pageCount, slicesOnPage, surah } from '../data/quran';
+import { juzForPage, loadQuran, pageCount, slicesOnPage, surah } from '../data/quran';
 import { sharedPlayer, type PlayerState } from '../playback/player';
 import { pageHref } from '../router';
 import { clipId, clipsOnPage } from '../store/db';
-import { fill, t } from '../strings';
+import { currentLanguage, fill, t } from '../strings';
 import type { Clip, QuranData } from '../types';
+import { saveLastPage } from './bottom-nav';
 import { el } from './dom';
 import { sliceNodes } from './mushaf';
+import { applyMushafSize, MUSHAF_SIZE_STEP, saveMushafSize, storedMushafSize } from './mushaf-size';
+import { openPageJump } from './page-jump';
 import { openRecorder } from './record-panel';
 
 /**
@@ -29,12 +32,17 @@ export async function renderPage(
     const data = await loadQuran();
     if (!isCurrent()) return;
     const article = mushaf(data, pageNumber);
+    const size = storedMushafSize();
+    applyMushafSize(article, size);
     target.replaceChildren(
       backLink(),
       pager(pageNumber),
+      toolbar(pageNumber, data, article, size),
       article,
       sliceList(target, data, pageNumber, isCurrent),
     );
+    // The Mushaf tab opens wherever the reader last left off (10A.1).
+    saveLastPage(pageNumber);
 
     // FR-6.3: mark the playing clip's ayah range, and keep following the player
     // so the mark moves with the track and disappears with the queue.
@@ -80,12 +88,87 @@ function pager(pageNumber: number): HTMLElement {
     'nav',
     { class: 'pager', attrs: { 'aria-label': t('pageNav') } },
     step(pageNumber - 1, 'prev'),
-    el('span', {
-      class: 'pager-label',
-      attrs: { 'data-testid': 'page-number' },
-      text: fill(t('pageLabel'), { page: pageNumber, total: pageCount }),
-    }),
+    jumpButton(pageNumber),
     step(pageNumber + 1, 'next'),
+  );
+}
+
+/** The page label is the way into direct page access (10C.1). */
+function jumpButton(pageNumber: number): HTMLElement {
+  const label = fill(t('pageLabel'), { page: pageNumber, total: pageCount });
+  const button = el('button', {
+    class: 'pager-label',
+    attrs: {
+      type: 'button',
+      'data-testid': 'page-number',
+      'aria-label': `${label} · ${t('pageJumpTitle')}`,
+    },
+    text: label,
+  });
+  button.addEventListener('click', () => openPageJump(pageNumber));
+  return button;
+}
+
+/**
+ * The running header above the mushaf (10C.2) plus the font resizer (10C.3):
+ * one quiet row, so the page itself keeps the whole screen.
+ */
+function toolbar(
+  pageNumber: number,
+  data: QuranData,
+  article: HTMLElement,
+  initialSize: number,
+): HTMLElement {
+  const first = slicesOnPage(data, pageNumber)[0];
+  const context = el('p', {
+    class: 'page-juz',
+    attrs: { 'data-testid': 'page-juz' },
+    text: first
+      ? fill(t('pageJuzContext'), {
+          juz: juzForPage(pageNumber),
+          surah:
+            currentLanguage() === 'id'
+              ? surah(data, first.surah).nameId
+              : surah(data, first.surah).nameEn,
+        })
+      : '',
+  });
+
+  let size = initialSize;
+  const setSize = (next: number): void => {
+    size = saveMushafSize(next);
+    applyMushafSize(article, size);
+  };
+
+  const smaller = el('button', {
+    class: 'font-button',
+    attrs: {
+      type: 'button',
+      'data-testid': 'font-smaller',
+      'aria-label': t('mushafSmaller'),
+      title: t('mushafSmaller'),
+    },
+    text: 'A−',
+  });
+  smaller.addEventListener('click', () => setSize(size - MUSHAF_SIZE_STEP));
+
+  const larger = el('button', {
+    class: 'font-button',
+    attrs: {
+      type: 'button',
+      'data-testid': 'font-larger',
+      'aria-label': t('mushafLarger'),
+      title: t('mushafLarger'),
+    },
+    text: 'A+',
+  });
+  larger.addEventListener('click', () => setSize(size + MUSHAF_SIZE_STEP));
+
+  return el(
+    'div',
+    { class: 'page-toolbar' },
+    context,
+    el('div', { class: 'font-controls' }, smaller, larger),
   );
 }
 
@@ -133,7 +216,7 @@ function paintPlayingAyahs(
 
 function mushaf(data: QuranData, pageNumber: number): HTMLElement {
   const article = el('article', {
-    class: 'mushaf',
+    class: 'mushaf mushaf-page',
     attrs: { dir: 'rtl', lang: 'ar', 'data-testid': 'mushaf' },
   });
 

@@ -28,6 +28,38 @@ export function loadQuran(): Promise<QuranData> {
 
 export const pageCount = 604;
 export const surahCount = 114;
+export const juzCount = 30;
+
+/** First page of each juz in the standard Madani mushaf (Juz 1–30). */
+export const JUZ_START_PAGES: readonly number[] = [
+  1, 22, 42, 62, 82, 102, 121, 142, 162, 182, 201, 222, 242, 262, 282, 302, 322, 342, 362, 382,
+  402, 422, 442, 462, 482, 502, 522, 542, 562, 582,
+];
+
+/** First page of one juz, 1–30. */
+export function juzStartPage(juz: number): number {
+  const first = JUZ_START_PAGES[juz - 1];
+  if (!first) throw new RangeError(`juz ${juz} is out of range`);
+  return first;
+}
+
+/** Last page of one juz: the page before the next juz begins (604 for Juz 30). */
+export function juzEndPage(juz: number): number {
+  juzStartPage(juz);
+  return juz === juzCount ? pageCount : juzStartPage(juz + 1) - 1;
+}
+
+/** Which juz a page belongs to (10C.2). */
+export function juzForPage(pageNumber: number): number {
+  if (!Number.isInteger(pageNumber) || pageNumber < 1 || pageNumber > pageCount) {
+    throw new RangeError(`page ${pageNumber} is out of range`);
+  }
+  let juz = 1;
+  for (let index = 0; index < JUZ_START_PAGES.length; index += 1) {
+    if ((JUZ_START_PAGES[index] ?? 1) <= pageNumber) juz = index + 1;
+  }
+  return juz;
+}
 
 /** Surah by number, 1–114. */
 export function surah(data: QuranData, number: number): Surah {

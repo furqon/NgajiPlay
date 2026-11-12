@@ -33,9 +33,19 @@ describe('string dictionary', () => {
   });
 
   it('really translates the copy instead of copying Indonesian across', () => {
-    // Two values are the same on purpose: "Surah" is the same word in both
-    // languages, and clipStats is pure formatting.
-    const sharedByDesign = new Set<StringKey>(['surahStartLabel', 'clipStats']);
+    // These values are the same on purpose: proper nouns and pure formatting.
+    const sharedByDesign = new Set<StringKey>([
+      'surahStartLabel',
+      'clipStats',
+      'importIncoming',
+      'settingsGoogleTitle',
+      'searchTabSurah',
+      'searchTabJuz',
+      'navMushaf',
+      'pageJuzContext',
+      'pageJumpJuz',
+      'playerRepeatButtonCount',
+    ]);
     const identical = ID_KEYS.filter(
       (key) => !sharedByDesign.has(key) && strings.en[key] === strings.id[key],
     );

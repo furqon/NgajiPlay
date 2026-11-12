@@ -45,7 +45,7 @@ test('the install icon appears only when the browser offers a prompt, and uses i
 test('without a prompt the icon stays hidden and the how-to explains the menu', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/#/settings');
 
   await expect(page.getByTestId('install')).toBeHidden();
 
@@ -61,7 +61,7 @@ test.describe('iPhone', () => {
   });
 
   test('iPhone users are told the Share-sheet way instead', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/#/settings');
     await page.getByTestId('how-to-open').click();
 
     await expect(page.getByTestId('install-guidance')).toContainText('Tambah ke Layar Utama');

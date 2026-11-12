@@ -9,9 +9,6 @@ import { ayahMedallion } from './format';
  * One slice as it sits on the page: a surah header band when the surah starts
  * here, the basmala split off ayah 1, then every ayah inline so the paragraph
  * justifies the way a printed page does.
- *
- * Shared by the page view and the recorder so the text the child recites is
- * exactly the text on the page (FR-2.5).
  */
 export function sliceNodes(data: QuranData, slice: PageSlice): HTMLElement[] {
   const nodes: HTMLElement[] = [];
@@ -46,16 +43,6 @@ export function sliceNodes(data: QuranData, slice: PageSlice): HTMLElement[] {
   nodes.push(paragraph);
 
   return nodes;
-}
-
-/** The same slice inside its own RTL article, used by the recording panel. */
-export function sliceMushaf(data: QuranData, slice: PageSlice, testId: string): HTMLElement {
-  const article = el('article', {
-    class: 'mushaf mushaf-slice',
-    attrs: { dir: 'rtl', lang: 'ar', 'data-testid': testId },
-  });
-  article.append(...sliceNodes(data, slice));
-  return article;
 }
 
 function ayahSpan(surahNumber: number, ayah: number, text: string): HTMLElement {

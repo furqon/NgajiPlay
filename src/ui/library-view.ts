@@ -1,13 +1,39 @@
 import { loadQuran, surah } from '../data/quran';
+import { backupStatus, onBackupChange, queueBackup, type BackupStatus } from '../drive/backup';
+import { isGoogleDriveConnected } from '../drive/oauth';
 import { sharedPlayer, type Player, type PlayerState } from '../playback/player';
 import { downloadClip } from '../recording/export';
+import {
+  canSaveToFolder,
+  forgetFolder,
+  getRememberedFolder,
+  saveRecordingsToFolder,
+  type FolderSaveOutcome,
+} from '../recording/save-to-folder';
 import { libraryHref, pageHref } from '../router';
-import { deleteClip, getClip, getSetting, listClips, renameClip, setSetting } from '../store/db';
+import {
+  deleteClip,
+  getClip,
+  getSetting,
+  listBackups,
+  listClips,
+  renameClip,
+  setSetting,
+} from '../store/db';
 import { estimateStorage, isStoragePersisted, requestPersistence } from '../store/storage';
-import { currentLanguage, fill, onLanguageChange, t } from '../strings';
-import type { Clip, QuranData } from '../types';
+import { currentLanguage, fill, onLanguageChange, t, type StringKey } from '../strings';
+import type { BackupRecord, Clip, ClipRecord, QuranData } from '../types';
 import { el } from './dom';
+import { createDrivePanel } from './drive-panel';
 import { formatDate, formatDuration, formatFileSize } from './format';
+import { createImportPanel } from './import-panel';
+
+const BACKUP_KEY: Record<BackupStatus, StringKey> = {
+  none: 'driveClipNone',
+  pending: 'driveClipPending',
+  uploaded: 'driveClipUploaded',
+  failed: 'driveClipFailed',
+};
 
 /**
  * The library as a header icon, in the same row as the language, help and
@@ -84,10 +110,18 @@ export async function renderLibrary(
     class: 'library-count',
     attrs: { 'data-testid': 'library-count' },
   });
+  const folderSupport = canSaveToFolder();
+  const saveAll = el('button', {
+    class: 'library-action',
+    attrs: { type: 'button', 'data-testid': 'save-all-to-folder', disabled: true },
+  });
   const exportAll = el('button', {
     class: 'library-action',
     attrs: { type: 'button', 'data-testid': 'export-all', disabled: true },
   });
+  const barActions = el('div', { class: 'library-actions' });
+  if (folderSupport) barActions.append(saveAll);
+  barActions.append(exportAll);
   const status = el('p', {
     class: 'state',
     attrs: { 'data-testid': 'library-state', 'aria-live': 'polite' },
@@ -103,14 +137,22 @@ export async function renderLibrary(
     class: 'storage-line storage-persist',
     attrs: { 'data-testid': 'storage-persist' },
   });
-  storage.append(usage, free, persistence);
+  const folderText = el('span', { attrs: { 'data-testid': 'storage-folder' } });
+  const forget = el('button', {
+    class: 'storage-link',
+    attrs: { type: 'button', 'data-testid': 'storage-folder-forget' },
+    text: t('storageFolderForget'),
+  });
+  const folderLine = el('p', { class: 'storage-line storage-folder' }, folderText, forget);
+  folderLine.hidden = !folderSupport;
+  storage.append(usage, free, persistence, folderLine);
 
   target.replaceChildren(
     back,
     el('h2', { class: 'library-title', text: t('libraryTitle') }),
     el('p', { class: 'tagline', text: t('libraryTagline') }),
     storage,
-    el('div', { class: 'library-bar' }, count, exportAll),
+    el('div', { class: 'library-bar' }, count, barActions),
     status,
     list,
   );
@@ -146,6 +188,24 @@ export async function renderLibrary(
       : t('storagePersistOff');
   };
 
+  const paintFolder = async (): Promise<void> => {
+    if (!folderSupport) return;
+    const remembered = await getRememberedFolder();
+    if (!isCurrent()) return;
+    folderText.textContent = remembered
+      ? fill(t('storageFolderRemembered'), { folder: remembered.name })
+      : t('storageFolderHint');
+    forget.hidden = remembered === null;
+  };
+
+  if (folderSupport) {
+    forget.addEventListener('click', () => {
+      void forgetFolder().then(() => {
+        if (isCurrent()) void paintFolder();
+      });
+    });
+  }
+
   let data: QuranData;
   let clips: Clip[];
   try {
@@ -159,6 +219,7 @@ export async function renderLibrary(
   status.textContent = '';
   void paintStorage();
   void askPersistence();
+  void paintFolder();
 
   const player = sharedPlayer();
 
@@ -166,13 +227,13 @@ export async function renderLibrary(
     const total = list.querySelectorAll('[data-testid="clip"]').length;
     count.textContent = fill(t('libraryCount'), { count: total });
     exportAll.textContent = fill(t('clipExportAll'), { count: total });
-    (exportAll as HTMLButtonElement).disabled = total === 0;
+    exportAll.disabled = total === 0;
+    if (folderSupport) {
+      saveAll.textContent = fill(t('clipSaveFolderAll'), { count: total });
+      saveAll.disabled = total === 0;
+    }
     if (total === 0) list.append(emptyState());
   };
-
-  for (const clip of clips) {
-    list.append(clipRow(clip, data, status, refreshSummary, clips, player));
-  }
 
   // The row being played reads as the now-playing bar's row, without another fetch.
   const paintNowPlaying = (state: PlayerState): void => {
@@ -187,6 +248,78 @@ export async function renderLibrary(
     }
   };
 
+  let paintVersion = 0;
+  const paintClips = async (): Promise<void> => {
+    const version = ++paintVersion;
+    const records = await listBackups().catch((): BackupRecord[] => []);
+    if (!isCurrent() || version !== paintVersion) return;
+
+    const connected = isGoogleDriveConnected();
+    const byClip = new Map(records.map((record) => [record.id, record]));
+    const showBackup = connected || records.length > 0;
+
+    list.replaceChildren();
+    for (const clip of clips) {
+      list.append(
+        clipRow(
+          clip,
+          data,
+          status,
+          () => {
+            refreshSummary();
+            drivePanel.refresh();
+          },
+          () => void paintFolder(),
+          clips,
+          player,
+          {
+            record: byClip.get(clip.id),
+            show: showBackup,
+            connected,
+            onChange: () => void paintClips(),
+          },
+        ),
+      );
+    }
+    refreshSummary();
+    paintNowPlaying(player.state);
+  };
+
+  const importer = createImportPanel({
+    data,
+    clips: () => clips,
+    status,
+    onImported: async () => {
+      const next = await listClips();
+      if (!isCurrent()) return;
+      clips = next;
+      await paintClips();
+      drivePanel.refresh();
+      void paintStorage();
+    },
+  });
+  barActions.prepend(importer.button);
+  status.after(importer.input, importer.panel);
+
+  const drivePanel = createDrivePanel({
+    clips: () => clips,
+    isCurrent,
+    importFiles: (files) => importer.showFiles(files),
+    onLibraryChanged: () => {
+      void paintClips();
+      void paintStorage();
+    },
+  });
+  storage.append(drivePanel.element);
+
+  const stopBackup = onBackupChange(() => {
+    if (!isCurrent()) {
+      stopBackup();
+      return;
+    }
+    void paintClips();
+  });
+
   const unsubscribe = player.subscribe((state) => {
     if (!isCurrent()) {
       // The view is gone; keeping the subscription would leak one per visit.
@@ -195,14 +328,27 @@ export async function renderLibrary(
     }
     paintNowPlaying(state);
   });
-  paintNowPlaying(player.state);
 
   exportAll.addEventListener('click', () => {
     const current = clips.filter((clip) => list.querySelector(`[data-clip-id="${clip.id}"]`));
     void exportAllClips(current, status);
   });
 
-  refreshSummary();
+  if (folderSupport) {
+    saveAll.addEventListener('click', () => {
+      const current = clips.filter((clip) => list.querySelector(`[data-clip-id="${clip.id}"]`));
+      void saveAllToFolder(current, status, () => void paintFolder());
+    });
+  }
+
+  void paintClips();
+}
+
+interface ClipBackupState {
+  record?: BackupRecord;
+  show: boolean;
+  connected: boolean;
+  onChange: () => void;
 }
 
 function emptyState(): HTMLElement {
@@ -218,8 +364,10 @@ function clipRow(
   data: QuranData,
   status: HTMLElement,
   onRemoved: () => void,
+  onFolderSaved: () => void,
   queue: Clip[],
   player: Player,
+  backup: ClipBackupState,
 ): HTMLElement {
   const name = el('span', {
     class: 'clip-name',
@@ -230,6 +378,19 @@ function clipRow(
     class: 'clip-status',
     attrs: { 'data-testid': 'clip-status', 'aria-live': 'polite' },
   });
+  const state = backupStatus(clip, backup.record);
+  const backupLine =
+    backup.show && (backup.connected || backup.record)
+      ? el('p', {
+          class: 'clip-backup',
+          attrs: {
+            'data-testid': 'clip-backup-status',
+            'data-state': state,
+            'aria-live': 'polite',
+          },
+          text: t(BACKUP_KEY[state]),
+        })
+      : null;
   const actions = el('div', { class: 'clip-actions' });
   const row = el(
     'li',
@@ -262,6 +423,7 @@ function clipRow(
       }),
     ),
     rowStatus,
+    ...(backupLine ? [backupLine] : []),
     actions,
   );
 
@@ -273,16 +435,30 @@ function clipRow(
 
   const defaultActions = (): void => {
     const current = player.state;
-    actions.replaceChildren(
+    const buttons = [
       action(
         current.clip?.id === clip.id && current.playing ? t('playerPause') : t('playerPlay'),
         'clip-play',
         togglePlayback,
       ),
       action(t('clipRename'), 'clip-rename', () => startRename()),
+    ];
+
+    if (canSaveToFolder()) {
+      buttons.push(
+        action(t('clipSaveFolder'), 'clip-save-folder', () => void saveOneToFolder()),
+      );
+    }
+
+    if (backup.connected && backupStatus(clip, backup.record) !== 'uploaded') {
+      buttons.push(action(t('clipBackup'), 'clip-backup', () => void backupOne()));
+    }
+
+    buttons.push(
       action(t('clipExport'), 'clip-export', () => void exportOne()),
       action(t('clipDelete'), 'clip-delete', () => confirmDelete(), 'danger'),
     );
+    actions.replaceChildren(...buttons);
   };
 
   const startRename = (): void => {
@@ -384,6 +560,37 @@ function clipRow(
     }
   };
 
+  const saveOneToFolder = async (): Promise<void> => {
+    try {
+      const record = await getClip(clip.id);
+      if (!record) {
+        rowStatus.textContent = t('clipSaveFolderFailed');
+        return;
+      }
+      const outcome = await saveRecordingsToFolder([record]);
+      if (outcome.status === 'saved') {
+        rowStatus.textContent = fill(t('clipSavedToFolder'), { folder: outcome.folderName });
+        onFolderSaved();
+        return;
+      }
+      const message = folderFailure(outcome);
+      if (message) rowStatus.textContent = message;
+    } catch {
+      rowStatus.textContent = t('clipSaveFolderFailed');
+    }
+  };
+
+  const backupOne = async (): Promise<void> => {
+    rowStatus.textContent = t('clipBackupWorking');
+    try {
+      await queueBackup([clip.id]);
+      rowStatus.textContent = '';
+      backup.onChange();
+    } catch {
+      rowStatus.textContent = t('driveBackupFailed');
+    }
+  };
+
   defaultActions();
   return row;
 }
@@ -401,6 +608,46 @@ async function exportAllClips(clips: Clip[], status: HTMLElement): Promise<void>
     status.textContent = t('clipExported');
   } catch {
     status.textContent = t('clipExportFailed');
+  }
+}
+
+function folderFailure(outcome: FolderSaveOutcome): string | null {
+  if (outcome.status === 'denied') return t('clipSaveFolderDenied');
+  if (outcome.status === 'failed' || outcome.status === 'unsupported') {
+    return t('clipSaveFolderFailed');
+  }
+  return null;
+}
+
+async function saveAllToFolder(
+  clips: Clip[],
+  status: HTMLElement,
+  onSaved: () => void,
+): Promise<void> {
+  try {
+    const records: ClipRecord[] = [];
+    for (const clip of clips) {
+      const record = await getClip(clip.id);
+      if (record) records.push(record);
+    }
+    if (records.length === 0) {
+      status.textContent = t('clipSaveFolderFailed');
+      return;
+    }
+
+    status.textContent = fill(t('clipSavingToFolder'), { done: 0, total: records.length });
+    const outcome = await saveRecordingsToFolder(records, ({ done, total }) => {
+      status.textContent = fill(t('clipSavingToFolder'), { done, total });
+    });
+
+    if (outcome.status === 'saved') {
+      status.textContent = fill(t('clipSavedToFolder'), { folder: outcome.folderName });
+      onSaved();
+      return;
+    }
+    status.textContent = folderFailure(outcome) ?? '';
+  } catch {
+    status.textContent = t('clipSaveFolderFailed');
   }
 }
 

@@ -32,6 +32,7 @@ test('a clip and its blob survive a real page reload', async ({ page }) => {
         bytes: blob.size,
         durationMs: 4321,
         createdAt: Date.now(),
+        updatedAt: Date.now(),
         displayName: 'p002-s001-al-fatihah',
       },
       blob,

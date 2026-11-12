@@ -4,7 +4,12 @@ import { pageHref } from '../router';
 import { currentLanguage, fill, t } from '../strings';
 import type { QuranData } from '../types';
 import { el } from './dom';
+import { juzIndex } from './juz-index';
+import { pagePlaylist } from './page-playlist';
 import { surahIndex } from './surah-index';
+
+const TAB_KEY = 'ngajiPlay.searchTab';
+type TabId = 'surah' | 'juz' | 'latihan';
 
 /**
  * Returning from a page re-renders this screen from scratch, so the last query
@@ -27,14 +32,6 @@ export function renderSearch(target: HTMLElement): void {
   });
   input.value = lastQuery;
 
-  const state = el('p', {
-    class: 'state',
-    attrs: { 'data-testid': 'search-state', 'aria-live': 'polite' },
-  });
-  const results = el('ul', { class: 'results', attrs: { 'data-testid': 'results' } });
-
-  // What used to be a line of help under the box is now the tooltip of a small
-  // icon beside it, so an empty search takes no vertical room.
   const hint = el(
     'span',
     {
@@ -49,26 +46,111 @@ export function renderSearch(target: HTMLElement): void {
     el('span', { class: 'search-hint-mark', attrs: { 'aria-hidden': 'true' }, text: 'i' }),
   );
 
+  const searchButton = el('button', {
+    class: 'search-button',
+    attrs: { type: 'submit', 'data-testid': 'search-button' },
+    text: t('searchButton'),
+  });
+
   const form = el(
     'form',
     { class: 'search', attrs: { role: 'search' } },
     input,
-    el('button', { class: 'search-button', attrs: { type: 'submit' }, text: t('searchButton') }),
+    searchButton,
     hint,
   );
 
-  const indexSlot = el('div');
+  // Page-jump chip: shown when query is a valid page number 1–604
+  const pageChip = el('div', { class: 'page-jump-chip', attrs: { hidden: true } });
 
-  // The surah index comes first, and the search box sits below it: browsing
-  // needs no typing, and a query's results still land right under the box.
-  target.append(indexSlot, form, state, results);
+  const state = el('p', {
+    class: 'state',
+    attrs: { 'data-testid': 'search-state', 'aria-live': 'polite' },
+  });
+  const results = el('ul', { class: 'results', attrs: { 'data-testid': 'results' } });
+
+  // --- Tabs ---
+  const activeTab = (): TabId => {
+    const stored = sessionStorage.getItem(TAB_KEY);
+    if (stored === 'juz' || stored === 'latihan') return stored;
+    return 'surah';
+  };
+
+  const tabSurah = el('button', {
+    class: 'search-tab',
+    attrs: { type: 'button', 'data-testid': 'tab-surah', 'aria-selected': 'true' },
+    text: t('searchTabSurah'),
+  });
+  const tabJuz = el('button', {
+    class: 'search-tab',
+    attrs: { type: 'button', 'data-testid': 'tab-juz', 'aria-selected': 'false' },
+    text: t('searchTabJuz'),
+  });
+  const tabLatihan = el('button', {
+    class: 'search-tab',
+    attrs: { type: 'button', 'data-testid': 'tab-latihan', 'aria-selected': 'false' },
+    text: t('searchTabLatihan'),
+  });
+
+  const tabBar = el(
+    'div',
+    { class: 'search-tabs', attrs: { role: 'tablist', 'data-testid': 'search-tabs' } },
+    tabSurah,
+    tabJuz,
+    tabLatihan,
+  );
+
+  const tabContent = el('div', { class: 'search-tab-content' });
+
+  // Assembled DOM order: form → pageChip → state → results → tabBar → tabContent
+  target.append(form, pageChip, state, results, tabBar, tabContent);
 
   let data: QuranData | null = null;
+
+  function renderTabContent(): void {
+    if (!data) return;
+    const tab = activeTab();
+    tabSurah.setAttribute('aria-selected', tab === 'surah' ? 'true' : 'false');
+    tabJuz.setAttribute('aria-selected', tab === 'juz' ? 'true' : 'false');
+    tabLatihan.setAttribute('aria-selected', tab === 'latihan' ? 'true' : 'false');
+
+    if (tab === 'surah') {
+      tabContent.replaceChildren(surahIndex(data, currentLanguage()));
+    } else if (tab === 'juz') {
+      tabContent.replaceChildren(juzIndex(data, currentLanguage()));
+    } else {
+      tabContent.replaceChildren(pagePlaylist());
+    }
+  }
+
+  function switchTab(id: TabId): void {
+    sessionStorage.setItem(TAB_KEY, id);
+    renderTabContent();
+  }
+
+  tabSurah.addEventListener('click', () => switchTab('surah'));
+  tabJuz.addEventListener('click', () => switchTab('juz'));
+  tabLatihan.addEventListener('click', () => switchTab('latihan'));
 
   function paint(): void {
     if (!data) return;
     const query = input.value.trim();
     results.replaceChildren();
+
+    // Page-jump chip
+    const asNum = Number(query);
+    if (query !== '' && Number.isInteger(asNum) && asNum >= 1 && asNum <= 604) {
+      const chipLink = el('a', {
+        class: 'page-jump-link',
+        attrs: { href: pageHref(asNum) },
+        text: fill(t('pageJumpChip'), { page: asNum }),
+      });
+      pageChip.replaceChildren(chipLink);
+      pageChip.removeAttribute('hidden');
+    } else {
+      pageChip.replaceChildren();
+      pageChip.setAttribute('hidden', '');
+    }
 
     if (query === '') {
       state.textContent = '';
@@ -104,8 +186,9 @@ export function renderSearch(target: HTMLElement): void {
     .then((loaded) => {
       data = loaded;
       paint();
-      // Below the results on purpose: typing still lands above the index.
-      indexSlot.replaceChildren(surahIndex(loaded, currentLanguage()));
+      renderTabContent();
+      // Restore previously selected tab
+      renderTabContent();
     })
     .catch(() => {
       state.textContent = t('loadError');

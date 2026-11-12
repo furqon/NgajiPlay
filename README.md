@@ -3,20 +3,24 @@
 A small offline-first PWA: a parent records a child reciting a surah portion of a
 Madani page, and the child replays it while looking at that same page.
 
-Spec: [docs/REQ.md](docs/REQ.md) · Plan: [docs/TASKS.md](docs/TASKS.md)
+Spec: [docs/REQ.md](docs/REQ.md) · Plan: [docs/TASKS.md](docs/TASKS.md) · UI/UX: [docs/UI_UX_ASSESSMENT.md](docs/UI_UX_ASSESSMENT.md)
 
 ## Status
 
-Phases 0–8 are implemented: the installable shell, the Madani data layer, search
+Phases 0–9C are implemented: the installable shell, the Madani data layer, search
 + page view, recording per surah slice, the library (rename, delete, export,
-storage), playback with repeat off/one/all/2/3/5/10 and resume, a page that
+import/restore, save-to-folder on desktop, optional Google Drive backup, storage),
+playback with repeat off/one/all/2/3/5/10 and resume, a temporary
+multi-page playlist with its own repeat count on the search screen, a page that
 follows the recording with the playing ayahs highlighted, an ID/EN switch, a
-browsable surah index, a how-it-works modal, an About screen carrying the Tanzil
-and OFL notices, a service worker that precaches the shell, caches the Quran text
-on use and waits for the listener before updating, an Android install prompt, iOS
+Settings screen for the optional Google OAuth client ID, a browsable surah index,
+a how-it-works modal, an About screen carrying the Tanzil and OFL notices, a
+service worker that precaches the shell, caches the Quran text on use and waits
+for the listener before updating, an Android install prompt, iOS
 add-to-home-screen guidance, and offline relaunch of a visited page. An Android
-APK built with Capacitor lives in `android/` (see below). The HTTPS deploy and
-the on-device checks are the only outstanding items.
+APK built with Capacitor lives in `android/` (see below). The HTTPS deploy, a
+live Google Cloud OAuth client and the on-device checks are the only outstanding
+items.
 
 ## Commands
 
@@ -27,8 +31,8 @@ npm run build      # production build + size budget check (REQ §7)
 npm run preview    # serve the built shell
 npm run typecheck  # tsc, app and service worker separately
 npm run lint
-npm run test:unit  # Vitest: Quran data, basmala split, IndexedDB, quota, search, naming
-npm run test:e2e   # Playwright: shell, data, pages, recording, library, playback, follow, i18n
+npm run test:unit  # Vitest: data, IndexedDB/migration, quota, search, naming, import, Drive queue/client
+npm run test:e2e   # Playwright: shell, pages, recording, library/import, Drive, playback, follow, i18n
 LONG_RECORDING=1 npx playwright test -g "thirty-second"   # the real 30 s capture
 npm run verify     # typecheck + lint + unit + e2e
 npm run icons      # regenerate public/icons from the vector mark
@@ -79,6 +83,29 @@ gitignored; `storeFile`, `storePassword`, `keyAlias`, `keyPassword`); without it
 the module still builds a debug APK. Built files from the last local run:
 `release/ngajiPlay-1.0.0.apk` (release, signature verified) and
 `release/ngajiPlay-1.0.0-debug.apk`.
+
+## Google Drive backup (optional)
+
+Off by default. The app can back up to the parent's own Drive with the minimal
+`drive.file` scope (only files this app creates) plus `openid email`; the access
+token stays in memory, there are no refresh tokens, no app backend and no
+automatic uploads. Disconnect clears the token and the local Drive file ids.
+
+To enable it:
+
+1. In Google Cloud Console, enable **Google Drive API**.
+2. Configure the OAuth consent screen and add the Google account as a test user
+   while the app is unverified.
+3. Create an OAuth client ID of type **Web application**.
+4. Add these **Authorized JavaScript origins** (origin only, no path):
+   `http://localhost:5173`, `http://localhost:4173`,
+   `https://furqon.github.io`.
+5. Paste the client ID in the app's **Settings** screen, or build with
+   `VITE_GOOGLE_CLIENT_ID=...apps.googleusercontent.com`.
+
+The code and fake-endpoint tests do not need a real credential. A live upload
+still needs a Google Cloud client ID and an authorized origin for the actual
+deploy.
 
 ## Deploy
 

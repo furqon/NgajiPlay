@@ -6,38 +6,49 @@ import { parseRoute, type Route } from './router';
 import { listClips } from './store/db';
 import { currentLanguage, fill, onLanguageChange, t } from './strings';
 import { renderAbout } from './ui/about-view';
-import { mountHowTo } from './ui/how-to';
+import { mountBottomNav, setActiveRoute } from './ui/bottom-nav';
 import { mountInstall } from './ui/install';
-import { mountLibraryLink, renderLibrary } from './ui/library-view';
+import { renderLibrary } from './ui/library-view';
 import { mountLanguageSwitch } from './ui/language-switch';
 import { renderPage } from './ui/page-view';
 import { mountPlaybackFollow } from './ui/playback-follow';
 import { mountPlayerBar } from './ui/player-bar';
 import { closeRecorder, isRecorderOpen } from './ui/record-panel';
 import { renderSearch } from './ui/search-view';
+import { renderSettings } from './ui/settings-view';
 import { watchForUpdates } from './ui/update-prompt';
 
 const view = document.querySelector<HTMLElement>('#view');
 const statusEl = document.querySelector<HTMLElement>('[data-testid="status"]');
+const statusTextEl = document.querySelector<HTMLElement>('.status-text');
 const chromeActions = document.querySelector<HTMLElement>('[data-testid="chrome-actions"]');
 
 type StatusKey = 'ready' | 'firstLoad' | 'offline' | 'noSw';
 
 let statusKey: StatusKey | null = null;
+let statusOpen = false;
 
 /** The status is kept as a key, never as a string, so it repaints on a language change. */
 function setStatus(key: StatusKey): void {
   statusKey = key;
+  statusOpen = false;
   paintStatus();
 }
 
-/** The dot carries no text of its own; the sentence is its tooltip and name. */
+/**
+ * The dot is the whole story; its sentence is a hover tooltip that also opens
+ * on tap/focus, so the header stays one compact row and nothing is lost to a
+ * touch screen (10A.2).
+ */
 function paintStatus(): void {
   if (!statusEl || !statusKey) return;
   const text = t(statusKey);
   statusEl.setAttribute('data-state', statusKey);
+  statusEl.setAttribute('data-open', String(statusOpen));
+  statusEl.setAttribute('aria-expanded', String(statusOpen));
   statusEl.setAttribute('title', text);
   statusEl.setAttribute('aria-label', text);
+  if (statusTextEl) statusTextEl.textContent = text;
 }
 
 let renderId = 0;
@@ -52,14 +63,19 @@ async function render(route: Route): Promise<void> {
       ? fill(t('pageTitle'), { page: route.page })
       : route.name === 'library'
         ? `${t('libraryTitle')} · ngajiPlay`
-        : route.name === 'about'
-          ? `${t('aboutTitle')} · ngajiPlay`
-          : 'ngajiPlay';
+        : route.name === 'settings'
+          ? `${t('settingsTitle')} · ngajiPlay`
+          : route.name === 'about'
+            ? `${t('aboutTitle')} · ngajiPlay`
+            : 'ngajiPlay';
   window.scrollTo(0, 0);
   // A recording must not outlive the view that shows it: the microphone would
   // stay open and the timer would keep running off-screen.
   closeRecorder();
   view.replaceChildren();
+
+  // Update bottom nav active state
+  setActiveRoute(route);
 
   if (route.name === 'search') {
     renderSearch(view);
@@ -68,6 +84,11 @@ async function render(route: Route): Promise<void> {
 
   if (route.name === 'library') {
     await renderLibrary(view, () => id === renderId);
+    return;
+  }
+
+  if (route.name === 'settings') {
+    await renderSettings(view, () => id === renderId);
     return;
   }
 
@@ -96,14 +117,22 @@ async function start(): Promise<void> {
   document.documentElement.lang = currentLanguage();
   if (chromeActions) {
     mountLanguageSwitch(chromeActions);
-    mountHowTo(chromeActions);
-    // Install appears only when the browser offers it, so it sits after help.
+    // Install appears only when the browser offers it, so it sits after language toggle.
     mountInstall(chromeActions);
-    // Language, help, install, library, then the status dot at the far right.
-    mountLibraryLink(chromeActions);
-    if (statusEl) chromeActions.append(statusEl);
+    // Status dot on the right; click/tap reveals its sentence.
+    if (statusEl) {
+      statusEl.className = 'status';
+      statusEl.addEventListener('click', () => {
+        statusOpen = !statusOpen;
+        paintStatus();
+      });
+      chromeActions.append(statusEl);
+    }
   }
   paintStatus();
+
+  // Bottom navigation bar: How-To, Settings and Library moved here.
+  mountBottomNav();
 
   // One audio element for the app, mounted outside `#view` so navigating never
   // interrupts playback (FR-5.5).

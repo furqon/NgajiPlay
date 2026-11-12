@@ -52,9 +52,8 @@ test('the language switch repaints the app and survives a reload (FR-7.3)', asyn
     'placeholder',
     'For example: 100, 2, Al-Baqarah',
   );
-  await expect(page.getByTestId('about-link')).toHaveText('About');
-  // The library and the search help are icons now; their names are labels.
-  await expect(page.getByTestId('library-link')).toHaveAttribute('aria-label', 'Library');
+  // The library tab is labelled, and the search help keeps its sentence.
+  await expect(page.getByTestId('library-link')).toContainText('Library');
   await expect(page.getByTestId('search-hint')).toHaveAttribute(
     'title',
     'Type a page number from 1 to 604, or a surah name.',
@@ -69,18 +68,18 @@ test('the language switch repaints the app and survives a reload (FR-7.3)', asyn
   );
   await expect(page.getByTestId('language-toggle')).toHaveText('EN');
 
-  // The one-line pitch lives in the how-to modal now, in the chosen language.
+  // The one-line pitch lives in the how-to modal behind Settings (10A.2).
+  await page.goto('/#/settings');
   await page.getByTestId('how-to-open').click();
   await expect(page.getByTestId('how-to-intro')).toContainText('Record your child');
-  await page.getByTestId('how-to-close').click();
-
-  // And back, with the Indonesian copy intact.
+  await expect(page.getByTestId('about-link')).toHaveText('About');
+  await page.getByTestId('how-to-close').click();  // And back, with the Indonesian copy intact.
+  await page.goto('/');
   await page.getByTestId('language-toggle').click();
   await expect(page.getByTestId('search-input')).toHaveAttribute(
-    'aria-label',
-    'Cari halaman atau surah',
+    'aria-label', 'Cari halaman atau surah',
   );
-  await expect(page.getByTestId('about-link')).toHaveText('Tentang');
+  await expect(page.getByTestId('library-link')).toContainText('Hafalan');
   await expect.poll(() => storedLanguage(page)).toBe('id');
   await page.reload();
   await expect(page.getByTestId('search-input')).toHaveAttribute(
@@ -93,12 +92,14 @@ test('English screens fit a 390px phone without being cut off', async ({ page })
   await page.goto('/');
   await page.getByTestId('language-toggle').click();
 
-  // How-it-works lives behind the header icon now; it must render in English.
+  // How-it-works lives behind the Settings tab now; it must render in English.
+  await page.goto('/#/settings');
   await page.getByTestId('how-to-open').click();
   await expect(page.getByTestId('how-to')).toContainText('How it works');
   await page.getByTestId('how-to-close').click();
 
   // The surah index uses the English names when English is chosen.
+  await page.goto('/');
   await expect(page.locator('[data-testid="surah-link"][data-surah="108"]')).toContainText(
     'Al-Kawthar',
   );

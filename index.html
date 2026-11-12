@@ -25,9 +25,16 @@
           <h1>ngajiPlay</h1>
         </a>
         <div class="chrome-actions" data-testid="chrome-actions">
-          <span class="status" data-testid="status" data-state="booting" role="img">
+          <button
+            class="status"
+            type="button"
+            data-testid="status"
+            data-state="booting"
+            aria-expanded="false"
+          >
             <span class="dot" aria-hidden="true"></span>
-          </span>
+            <span class="status-text" aria-hidden="true"></span>
+          </button>
         </div>
       </div>
     </header>

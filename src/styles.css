@@ -130,8 +130,8 @@ h1 {
 
 /*
  * The status is a dot, not a sentence: offline, first load and unsupported are
- * rare, and a full-width pill for them crowded the header. The text is the
- * hover tooltip and the accessible name.
+ * rare, and a full-width pill for them crowded the header. Hover, keyboard
+ * focus or a tap reveals the sentence; `title`/`aria-label` always carry it.
  */
 .status {
   display: inline-flex;
@@ -142,8 +142,11 @@ h1 {
   margin: 0;
   padding: 0;
   border: 0;
+  border-radius: 999px;
   background: transparent;
-  cursor: help;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
 }
 
 .dot {
@@ -233,6 +236,107 @@ h1 {
   font-style: italic;
 }
 
+.page-playlist {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.page-playlist-title {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.page-playlist-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.page-playlist-field {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.page-playlist-field-pages {
+  flex: 1 1 150px;
+  min-width: 0;
+}
+
+.page-playlist-field-repeat {
+  flex: 0 0 auto;
+}
+
+.page-playlist-input {
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  /* 16px keeps iOS from zooming the page when the field is focused. */
+  font: inherit;
+  font-size: 1rem;
+}
+
+.page-playlist-field-pages .page-playlist-input {
+  width: 100%;
+}
+
+.page-playlist-repeat-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.page-playlist-repeat {
+  width: 68px;
+  text-align: center;
+}
+
+.page-playlist-play {
+  min-height: 44px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--deep);
+  color: #fbf8f1;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.page-playlist-play:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.page-playlist-input:focus-visible,
+.page-playlist-play:focus-visible {
+  outline: 3px solid var(--deep);
+  outline-offset: 2px;
+}
+
+.page-playlist-status {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.page-playlist-status:empty {
+  display: none;
+}
+
 .state {
   margin: 0 0 12px;
   min-height: 1.5em;
@@ -310,9 +414,62 @@ h1 {
 }
 
 .pager-label {
-  font-size: 0.85rem;
-  color: var(--muted);
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.82rem;
   font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.pager-label:focus-visible {
+  outline: 3px solid var(--deep);
+  outline-offset: 2px;
+}
+
+/* Juz context on the left, the font resizer on the right (10C.2, 10C.3). */
+.page-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 2px 6px;
+}
+
+.page-juz {
+  margin: 0;
+  color: var(--deep);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.font-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.font-button {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--deep);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.font-button:focus-visible {
+  outline: 3px solid var(--deep);
+  outline-offset: 2px;
 }
 
 .step {
@@ -335,8 +492,13 @@ h1 {
   background: transparent;
 }
 
-.mushaf {
-  padding: 4px 0 14px;
+/* A quiet printed-page frame, not a card: the text stays the loudest thing. */
+.mushaf-page {
+  padding: 12px 14px 16px;
+  border: 1px solid #e3dac4;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #fffdf8, #faf5e9);
+  box-shadow: inset 0 0 0 3px #fff, 0 1px 2px rgb(31 36 33 / 6%);
 }
 
 .surah-header {
@@ -707,12 +869,89 @@ h1 {
   color: var(--deep);
 }
 
+.storage-folder {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.storage-folder[hidden],
+.storage-link[hidden] {
+  display: none;
+}
+
+.storage-link {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--deep);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.drive {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--rule);
+}
+
+.drive-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.drive-body {
+  display: grid;
+  gap: 6px;
+}
+
+.drive-hint,
+.drive-status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.drive-status[data-testid='drive-connected'] {
+  color: var(--deep);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.drive-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.drive-actions .library-action {
+  padding: 0 12px;
+  font-size: 0.85rem;
+}
+
 .library-bar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 8px;
+}
+
+.library-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
 }
 
 .library-count {
@@ -791,6 +1030,21 @@ h1 {
   display: none;
 }
 
+.clip-backup {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.clip-backup[data-state='uploaded'] {
+  color: var(--deep);
+  font-weight: 600;
+}
+
+.clip-backup[data-state='failed'] {
+  color: #a3352a;
+}
+
 .clip-actions {
   display: flex;
   flex-wrap: wrap;
@@ -865,13 +1119,149 @@ h1 {
   font-size: 0.9rem;
 }
 
+.import-panel {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 10px;
+  padding: 12px;
+  border: 1px solid var(--deep);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.import-panel[hidden] {
+  display: none;
+}
+
+.import-title {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 650;
+}
+
+.import-hint {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.import-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.import-row {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+}
+
+.import-row[data-kind='rejected'] {
+  border-color: #e3c9c2;
+}
+
+.import-head {
+  display: grid;
+  gap: 2px;
+}
+
+.import-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.import-meta,
+.import-existing {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  overflow-wrap: anywhere;
+}
+
+.import-choice,
+.import-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.import-actions {
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.import-choice-button,
+.import-action {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--deep);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.import-choice-button[aria-pressed='true'],
+.import-action-primary {
+  border-color: var(--deep);
+  background: var(--deep);
+  color: #fbf8f1;
+}
+
+.import-choice-button:disabled,
+.import-action:disabled {
+  border-color: var(--rule);
+  background: var(--paper);
+  color: #b9b2a2;
+  cursor: default;
+}
+
+.import-badge {
+  justify-self: start;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #edf3e7;
+  color: var(--deep);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.import-problem {
+  color: #a3352a;
+  font-size: 0.86rem;
+}
+
+.import-outcome {
+  color: var(--deep);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.import-outcome:empty {
+  display: none;
+}
+
 .library-action:focus-visible,
+.storage-link:focus-visible,
+.settings-button:focus-visible,
+.settings-input:focus-visible,
 .clip-action:focus-visible,
 .clip-input:focus-visible,
 .clip-save:focus-visible,
 .clip-cancel:focus-visible,
+.import-choice-button:focus-visible,
+.import-action:focus-visible,
 .clip-meta:focus-visible,
 .player-button:focus-visible,
+.player-drawer-toggle:focus-visible,
 .player-meta:focus-visible {
   outline: 3px solid var(--deep);
   outline-offset: 2px;
@@ -945,8 +1335,8 @@ h1 {
   position: fixed;
   inset: auto 0 0;
   z-index: 10;
-  padding: 8px calc(16px + env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom))
-    calc(16px + env(safe-area-inset-left));
+  padding: 6px calc(12px + env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom))
+    calc(12px + env(safe-area-inset-left));
   border-top: 1px solid var(--rule);
   background: #fff;
   box-shadow: 0 -10px 28px rgb(31 36 33 / 10%);
@@ -956,35 +1346,80 @@ h1 {
   display: none;
 }
 
-/* Keep the last line of the page reachable behind the fixed bar. */
+/*
+ * Keep the last line of the page reachable behind the fixed bar. The bar
+ * measures itself into `--player-h`, so padding tracks the real height and
+ * leaves no dead space when the drawer is closed or the title is short.
+ */
 body.has-player {
-  padding-bottom: 136px;
+  padding-bottom: calc(var(--player-h, 128px) + 10px);
+  scroll-padding-bottom: calc(var(--player-h, 128px) + 16px);
 }
 
 .player-inner {
   display: grid;
-  gap: 4px;
+  gap: 2px;
   max-width: 720px;
   margin: 0 auto;
 }
 
 .player-head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
 
-.player-info {
+.player-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+}
+
+.player-drawer-toggle {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--deep);
+  font: inherit;
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.player-drawer {
   display: grid;
-  gap: 1px;
+  gap: 2px;
+}
+
+.player-drawer[hidden] {
+  display: none;
+}
+
+.player-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 10px;
   min-width: 0;
 }
 
+/*
+ * Imported file names can be arbitrarily long. One ellipsized line keeps the
+ * bar a fixed, predictable height on a phone; the full name is in `title`.
+ */
 .player-title {
+  flex: 1 0 100%;
+  min-width: 0;
   font-size: 0.92rem;
   font-weight: 650;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .player-meta {
@@ -1000,6 +1435,16 @@ body.has-player {
   text-decoration: underline;
 }
 
+.player-playlist {
+  color: var(--deep);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.player-playlist:empty {
+  display: none;
+}
+
 .player-status {
   margin: 0;
   color: #a3352a;
@@ -1010,9 +1455,17 @@ body.has-player {
   display: none;
 }
 
-.player-controls {
+/* Seek row: elapsed, slider and remaining share one line. */
+.player-seek {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Four transport buttons in a single row that never wraps. */
+.player-controls {
+  display: grid;
+  grid-template-columns: auto auto minmax(76px, 1fr) auto;
   align-items: center;
   gap: 6px;
 }
@@ -1020,7 +1473,7 @@ body.has-player {
 .player-button {
   min-width: 44px;
   min-height: 44px;
-  padding: 0 12px;
+  padding: 0 10px;
   border: 1px solid var(--rule);
   border-radius: 999px;
   background: var(--paper);
@@ -1031,6 +1484,7 @@ body.has-player {
 }
 
 .player-toggle {
+  width: 100%;
   border-color: var(--deep);
   background: var(--deep);
   color: #fbf8f1;
@@ -1038,26 +1492,31 @@ body.has-player {
 }
 
 .player-time {
-  margin-inline-start: auto;
+  flex: none;
   color: var(--muted);
-  font-size: 0.84rem;
+  font-size: 0.76rem;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
-/* "Back to the playing ayah" — never shown unless it would actually help. */
+/* "Back to the playing ayah" — its own row, so it can never squeeze the head. */
+.player-follow-slot {
+  display: contents;
+}
+
 .player-follow {
-  flex: none;
+  width: 100%;
   min-height: 44px;
-  padding: 0 12px;
+  padding: 4px 12px;
   border: 1px solid #cfe0d6;
-  border-radius: 999px;
+  border-radius: 12px;
   background: #f4f8f5;
   color: var(--deep);
   font: inherit;
   font-size: 0.8rem;
   font-weight: 600;
-  text-align: start;
+  line-height: 1.3;
+  text-align: center;
   cursor: pointer;
 }
 
@@ -1095,48 +1554,6 @@ body.has-player {
   margin: 0 0 8px;
   font-size: 0.95rem;
   font-weight: 650;
-}
-
-/*
- * FR-2.5 keeps the ayahs on screen while recording, but the page itself is
- * already behind the panel, so this is a compact reading aid, not a second
- * page: smaller type, tighter margins, and a ceiling so the controls stay in
- * reach on a phone.
- */
-.mushaf-slice {
-  --mushaf-size: 19px;
-  --mushaf-line: 1.75;
-  max-height: 34vh;
-  overflow-y: auto;
-  padding: 8px 10px;
-  border: 1px solid var(--rule);
-  border-radius: 10px;
-  background: #fff;
-  -webkit-overflow-scrolling: touch;
-}
-
-.mushaf-slice .surah-header {
-  margin: 0 0 2px;
-  padding: 4px 0;
-}
-
-.mushaf-slice .surah-name-ar {
-  font-size: 1.15rem;
-  line-height: 1.4;
-}
-
-.mushaf-slice .surah-name-latin {
-  font-size: 0.68rem;
-}
-
-.mushaf-slice .basmala {
-  margin: 2px 0 0;
-  font-size: 1.05rem;
-  line-height: 1.6;
-}
-
-.mushaf-slice .ayahs {
-  margin: 0;
 }
 
 .recorder-timer {
@@ -1279,6 +1696,101 @@ body.has-player {
   outline-offset: 2px;
 }
 
+/* --- settings ---------------------------------------------------------- */
+
+.settings-title {
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+  font-weight: 650;
+}
+
+.settings {
+  display: grid;
+  gap: 14px;
+}
+
+.settings-block {
+  padding: 12px;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.settings-block h3 {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.settings-block p {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.settings-form {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.settings-label {
+  color: var(--deep);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.settings-input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 1rem;
+}
+
+.settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.settings-button {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--deep);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.settings-button-primary {
+  border-color: var(--deep);
+  background: var(--deep);
+  color: #fbf8f1;
+}
+
+.settings-status {
+  margin: 0;
+  color: var(--deep);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.settings-status:empty {
+  display: none;
+}
+
+.settings-note {
+  overflow-wrap: anywhere;
+}
+
 /* A phone in portrait and a desktop reading column (FR-7.4). */
 @media (min-width: 768px) {
   .chrome {
@@ -1294,4 +1806,286 @@ body.has-player {
   .status {
     transition: background-color 160ms ease;
   }
+}
+
+/* --- bottom navigation -------------------------------------------------- */
+
+.bottom-nav {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 9;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 4px calc(8px + env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom))
+    calc(8px + env(safe-area-inset-left));
+  border-top: 1px solid var(--rule);
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 -6px 20px rgb(31 36 33 / 6%);
+}
+
+.bottom-nav-tab {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 2px;
+  min-height: 54px;
+  padding: 4px 2px;
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.bottom-nav-tab[aria-current='page'] {
+  color: var(--deep);
+  background: #eef4ef;
+}
+
+.bottom-nav-tab:focus-visible {
+  outline: 3px solid var(--deep);
+  outline-offset: -2px;
+}
+
+/* Leave room for the bar, and for the measured player that sits above it. */
+body.has-bottom-nav {
+  padding-bottom: 76px;
+  scroll-padding-bottom: 84px;
+}
+
+body.has-bottom-nav.has-player {
+  padding-bottom: calc(var(--player-h, 128px) + 72px + env(safe-area-inset-bottom));
+  scroll-padding-bottom: calc(var(--player-h, 128px) + 80px + env(safe-area-inset-bottom));
+}
+
+body.has-bottom-nav .player {
+  bottom: calc(62px + env(safe-area-inset-bottom));
+  padding-bottom: 6px;
+}
+
+/* --- page jump ---------------------------------------------------------- */
+
+.page-jump {
+  width: min(360px, calc(100vw - 32px));
+  padding: 18px;
+  border: 1px solid var(--rule);
+  border-radius: 16px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.page-jump::backdrop,
+.repeat-sheet::backdrop {
+  background: rgb(31 36 33 / 45%);
+}
+
+.page-jump-title,
+.repeat-title {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+
+.page-jump-hint,
+.repeat-hint {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.page-jump-form {
+  display: grid;
+  gap: 8px;
+}
+
+.page-jump-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.page-jump-slider {
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  accent-color: var(--deep);
+  cursor: pointer;
+}
+
+.page-jump-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.page-jump-shortcut {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--deep);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.page-jump-preview {
+  margin: 0;
+  color: var(--deep);
+  font-size: 0.88rem;
+  font-weight: 600;
+  min-height: 1.4em;
+}
+
+.page-jump-error {
+  margin: 0;
+  color: #a3352a;
+  font-size: 0.84rem;
+}
+
+.page-jump-error:empty {
+  display: none;
+}
+
+.page-jump-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.page-jump-go,
+.page-jump-cancel {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.page-jump-go {
+  border: 1px solid var(--deep);
+  background: var(--deep);
+  color: #fbf8f1;
+}
+
+.page-jump-cancel {
+  border: 1px solid var(--rule);
+  background: transparent;
+  color: var(--deep);
+}
+
+.page-jump-shortcut:focus-visible,
+.page-jump-go:focus-visible,
+.page-jump-cancel:focus-visible,
+.page-jump-input:focus-visible,
+.page-jump-slider:focus-visible {
+  outline: 3px solid var(--deep);
+  outline-offset: 2px;
+}
+
+/* --- repeat drill sheet ------------------------------------------------- */
+
+.repeat-sheet {
+  width: min(360px, calc(100vw - 32px));
+  padding: 18px;
+  border: 1px solid var(--rule);
+  border-radius: 16px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.repeat-options {
+  display: grid;
+  gap: 6px;
+}
+
+.repeat-option {
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: start;
+  cursor: pointer;
+}
+
+.repeat-option[aria-checked='true'] {
+  border-color: var(--deep);
+  background: #eef4ef;
+  color: var(--deep);
+  font-weight: 650;
+}
+
+.repeat-close {
+  margin-top: 12px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--deep);
+  border-radius: 999px;
+  background: var(--deep);
+  color: #fbf8f1;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.repeat-option:focus-visible,
+.repeat-close:focus-visible,
+.player-scrubber:focus-visible {
+  outline: 3px solid var(--deep);
+  outline-offset: 2px;
+}
+
+/* --- status pill -------------------------------------------------------- */
+
+/* A dot is enough while all is well; a state the parent must act on speaks. */
+.status:hover,
+.status:focus-visible,
+.status[data-open='true'] {
+  width: auto;
+  max-width: min(280px, 72vw);
+  gap: 6px;
+  padding: 0 12px;
+  border: 1px solid var(--rule);
+  background: #fff;
+  font-size: 0.75rem;
+  line-height: 1.25;
+  text-align: start;
+}
+
+.status-text {
+  display: none;
+}
+
+.status:hover .status-text,
+.status:focus-visible .status-text,
+.status[data-open='true'] .status-text {
+  display: inline;
+}
+
+/* The seek bar takes its own row above the transport controls. */
+.player-scrubber {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 28px;
+  margin: 0;
+  accent-color: var(--deep);
+  cursor: pointer;
 }

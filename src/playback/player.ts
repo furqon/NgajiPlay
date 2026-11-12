@@ -46,6 +46,8 @@ export interface PlayerState {
   repeat: RepeatMode;
   /** Times the current clip has been started; numeric repeat counts on it. */
   plays: number;
+  playlistRepeat: number;
+  playlistPass: number;
 }
 
 export interface PlayerOptions {
@@ -78,6 +80,8 @@ const INITIAL: PlayerState = {
   durationMs: 0,
   repeat: 'off',
   plays: 1,
+  playlistRepeat: 1,
+  playlistPass: 1,
 };
 
 /**
@@ -138,10 +142,16 @@ export class Player {
   }
 
   /** Starts a clip from the given playlist (FR-5.1). */
-  async play(queue: readonly Clip[], clipId: string): Promise<void> {
+  async play(
+    queue: readonly Clip[],
+    clipId: string,
+    options: { playlistRepeat?: number } = {},
+  ): Promise<void> {
+    const playlistRepeat = Math.max(1, Math.trunc(options.playlistRepeat ?? 1));
     this.setQueue(queue);
     const index = this.#state.queue.findIndex((clip) => clip.id === clipId);
     if (index < 0) return;
+    this.#update({ playlistRepeat, playlistPass: 1 });
     await this.#load(index, { play: true, positionMs: 0 });
   }
 
@@ -154,6 +164,7 @@ export class Player {
     this.setQueue(queue);
     const index = this.#state.queue.findIndex((clip) => clip.id === clipId);
     if (index < 0) return;
+    this.#update({ playlistRepeat: 1, playlistPass: 1 });
     await this.#load(index, { play: false, positionMs });
   }
 
@@ -203,6 +214,10 @@ export class Player {
     const mode = nextRepeatMode(this.#state.repeat);
     this.#update({ repeat: mode });
     return mode;
+  }
+
+  seek(ms: number): void {
+    if (this.#audio) this.#audio.currentTime = ms / 1000;
   }
 
   async #load(
@@ -262,7 +277,7 @@ export class Player {
   }
 
   #ended(): void {
-    const { repeat, index, queue, plays } = this.#state;
+    const { repeat, index, queue, plays, playlistRepeat, playlistPass } = this.#state;
 
     if (repeat === 'one') {
       this.#restart();
@@ -281,6 +296,12 @@ export class Player {
     }
 
     if (repeat === 'all') {
+      void this.#load(0, { play: true, positionMs: 0 });
+      return;
+    }
+
+    if (playlistRepeat > 1 && playlistPass < playlistRepeat) {
+      this.#update({ playlistPass: playlistPass + 1 });
       void this.#load(0, { play: true, positionMs: 0 });
       return;
     }

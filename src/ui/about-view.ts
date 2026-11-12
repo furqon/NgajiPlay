@@ -64,6 +64,7 @@ export async function renderAbout(target: HTMLElement, isCurrent: () => boolean)
           text: t('aboutFontLicense'),
         }),
       ]),
+      section(t('aboutImportTitle'), [el('p', { text: t('aboutImportBody') })]),
       section(t('aboutPrivacyTitle'), [el('p', { text: t('aboutPrivacyBody') })]),
     );
   } catch {

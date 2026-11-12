@@ -64,6 +64,29 @@ test('plays a clip and the bar shows its page, surah, elapsed and remaining time
   expect(overflow.scroll).toBeLessThanOrEqual(overflow.client);
 });
 
+test('closes and reopens the controls drawer without interrupting playback', async ({ page }) => {
+  await seed(page, [FIRST]);
+  await page.getByTestId('clip-play').first().click();
+
+  const drawer = page.getByTestId('player-drawer');
+  const toggle = page.getByTestId('player-drawer-toggle');
+  await expect(drawer).toBeVisible();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+
+  await toggle.click();
+  await expect(drawer).toBeHidden();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(toggle).toHaveAttribute('aria-label', 'Tampilkan kontrol');
+  await expect(page.getByTestId('player-title')).toBeVisible();
+
+  const before = await elapsedSeconds(page);
+  await expect.poll(() => elapsedSeconds(page), { timeout: 6_000 }).toBeGreaterThan(before);
+
+  await toggle.click();
+  await expect(drawer).toBeVisible();
+  await expect(page.getByTestId('player-toggle')).toHaveText('Jeda');
+});
+
 test('next and previous move through the playlist and mark the playing row', async ({ page }) => {
   await seed(page, [FIRST, SECOND]);
   await page.getByTestId('clip-play').first().click();
@@ -87,26 +110,52 @@ test('next and previous move through the playlist and mark the playing row', asy
   await expect(page.getByTestId('clip').first()).toHaveAttribute('data-playing', 'true');
 });
 
-test('the repeat button cycles every mode in FR-5.2 order', async ({ page }) => {
+test('the repeat button opens an explained drill sheet and reflects the mode', async ({ page }) => {
   await seed(page, [FIRST]);
   await page.getByTestId('clip-play').first().click();
   await page.getByTestId('player-toggle').click();
 
   const repeat = page.getByTestId('player-repeat');
-  await expect(repeat).toHaveText('Ulangi: nonaktif');
+  const sheet = page.getByTestId('repeat-sheet');
+  await expect(repeat).toHaveText('Ulangi');
 
-  for (const label of [
-    'Ulangi: satu',
-    'Ulangi: semua',
-    'Ulangi: 2×',
-    'Ulangi: 3×',
-    'Ulangi: 5×',
-    'Ulangi: 10×',
-    'Ulangi: nonaktif',
-  ]) {
-    await repeat.click();
-    await expect(repeat).toHaveText(label);
-  }
+  await repeat.click();
+  await expect(sheet).toBeVisible();
+  await expect(page.getByTestId('repeat-option-off')).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByTestId('repeat-option-3')).toContainText('3×');
+
+  await page.getByTestId('repeat-option-3').click();
+  await expect(sheet).toBeHidden();
+  await expect(repeat).toHaveText('3×');
+
+  await repeat.click();
+  await expect(page.getByTestId('repeat-option-3')).toHaveAttribute('aria-checked', 'true');
+  await page.getByTestId('repeat-option-all').click();
+  await expect(repeat).toHaveText('Semua');
+
+  await repeat.click();
+  await page.getByTestId('repeat-option-one').click();
+  await expect(repeat).toHaveText('Ulangi satu');
+
+  // Escape dismisses the sheet without changing the mode.
+  await repeat.click();
+  await page.keyboard.press('Escape');
+  await expect(sheet).toBeHidden();
+  await expect(repeat).toHaveText('Ulangi satu');
+});
+
+test('the scrubber seeks inside the clip instead of restarting it', async ({ page }) => {
+  await seed(page, [{ ...FIRST, seconds: 10 }]);
+  await page.getByTestId('clip-play').first().click();
+  await expect(page.getByTestId('player-toggle')).toHaveText('Jeda');
+
+  // Halfway through a ten-second clip: the readouts and the position agree.
+  await page.getByTestId('player-scrubber').fill('500');
+  await expect(page.getByTestId('player-elapsed')).toHaveText(/^0:0[4-6]$/);
+  await expect(page.getByTestId('player-remaining')).toHaveText(/^−0:0[4-6]$/);
+
+  await page.getByTestId('player-toggle').click();
+  expect(await elapsedSeconds(page)).toBeGreaterThanOrEqual(4);
 });
 
 test('a clip that ends hands over to the next one, and repeat one keeps it', async ({ page }) => {
@@ -122,7 +171,8 @@ test('a clip that ends hands over to the next one, and repeat one keeps it', asy
   // Park it, switch to repeat one, then let it run for longer than a clip.
   await page.getByTestId('player-toggle').click();
   await page.getByTestId('player-repeat').click();
-  await expect(page.getByTestId('player-repeat')).toHaveText('Ulangi: satu');
+  await page.getByTestId('repeat-option-one').click();
+  await expect(page.getByTestId('player-repeat')).toHaveText('Ulangi satu');
   await page.getByTestId('player-toggle').click();
 
   await page.waitForTimeout(2_000);
@@ -141,8 +191,8 @@ test('repeat all wraps from the last clip back to the first', async ({ page }) =
 
   await page.getByTestId('player-toggle').click();
   await page.getByTestId('player-repeat').click();
-  await page.getByTestId('player-repeat').click();
-  await expect(page.getByTestId('player-repeat')).toHaveText('Ulangi: semua');
+  await page.getByTestId('repeat-option-all').click();
+  await expect(page.getByTestId('player-repeat')).toHaveText('Semua');
   await page.getByTestId('player-toggle').click();
 
   await expect(page.getByTestId('player-title')).toHaveText('Ali satu', { timeout: 6_000 });

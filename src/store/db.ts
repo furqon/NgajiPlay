@@ -1,10 +1,11 @@
-import type { Clip, ClipRecord } from '../types';
+import type { BackupRecord, Clip, ClipRecord } from '../types';
 import { StorageQuotaError, isQuotaExceeded } from './storage';
 
 const DB_NAME = 'ngajiplay';
-const DB_VERSION = 1;
+const DB_VERSION = 3;
 const CLIPS = 'clips';
 const SETTINGS = 'settings';
+const BACKUPS = 'backups';
 
 /** One clip per page + surah slice (REQ §4), so the key is derived, not random. */
 export function clipId(page: number, surah: number): string {
@@ -34,6 +35,14 @@ export function openDatabase(): Promise<IDBDatabase> {
   return dbPromise;
 }
 
+export async function closeDatabase(): Promise<void> {
+  const pending = dbPromise;
+  dbPromise = null;
+  if (!pending) return;
+  const db = await pending;
+  db.close();
+}
+
 /**
  * Schema migrations. Every future version gets its own branch here; existing
  * branches must never change once shipped.
@@ -44,7 +53,24 @@ export function migrate(db: IDBDatabase, transaction: IDBTransaction | null, old
     clips.createIndex('by-page', 'page');
     clips.createIndex('by-surah', 'surah');
     db.createObjectStore(SETTINGS, { keyPath: 'key' });
-    void transaction;
+  }
+
+  if (oldVersion < 2 && transaction) {
+    const store = transaction.objectStore(CLIPS);
+    const cursor = store.openCursor();
+    cursor.onsuccess = () => {
+      const current = cursor.result;
+      if (!current) return;
+      const clip = current.value as Clip;
+      if (typeof clip.updatedAt !== 'number') {
+        current.update({ ...clip, updatedAt: clip.createdAt });
+      }
+      current.continue();
+    };
+  }
+
+  if (oldVersion < 3) {
+    db.createObjectStore(BACKUPS, { keyPath: 'id' });
   }
 }
 
@@ -171,11 +197,49 @@ export async function setSetting<T>(key: string, value: T): Promise<void> {
   await committed(transaction);
 }
 
+export async function getBackup(id: string): Promise<BackupRecord | undefined> {
+  const db = await openDatabase();
+  const transaction = db.transaction(BACKUPS, 'readonly');
+  return request<BackupRecord | undefined>(
+    transaction.objectStore(BACKUPS).get(id) as IDBRequest<BackupRecord | undefined>,
+  );
+}
+
+export async function listBackups(): Promise<BackupRecord[]> {
+  const db = await openDatabase();
+  const transaction = db.transaction(BACKUPS, 'readonly');
+  return request<BackupRecord[]>(
+    transaction.objectStore(BACKUPS).getAll() as IDBRequest<BackupRecord[]>,
+  );
+}
+
+export async function putBackup(backup: BackupRecord): Promise<void> {
+  const db = await openDatabase();
+  const transaction = db.transaction(BACKUPS, 'readwrite');
+  transaction.objectStore(BACKUPS).put(backup);
+  await committed(transaction);
+}
+
+export async function deleteBackup(id: string): Promise<void> {
+  const db = await openDatabase();
+  const transaction = db.transaction(BACKUPS, 'readwrite');
+  transaction.objectStore(BACKUPS).delete(id);
+  await committed(transaction);
+}
+
+export async function clearBackups(): Promise<void> {
+  const db = await openDatabase();
+  const transaction = db.transaction(BACKUPS, 'readwrite');
+  transaction.objectStore(BACKUPS).clear();
+  await committed(transaction);
+}
+
 /** Used by tests and by "clear library" flows. */
 export async function clearAll(): Promise<void> {
   const db = await openDatabase();
-  const transaction = db.transaction([CLIPS, SETTINGS], 'readwrite');
+  const transaction = db.transaction([CLIPS, SETTINGS, BACKUPS], 'readwrite');
   transaction.objectStore(CLIPS).clear();
   transaction.objectStore(SETTINGS).clear();
+  transaction.objectStore(BACKUPS).clear();
   await committed(transaction);
 }

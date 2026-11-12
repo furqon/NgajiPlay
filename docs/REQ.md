@@ -13,13 +13,15 @@ A small, offline-first web app where a parent records a child reciting from a pa
 | **Recorder** (parent / older kid) | Finds a page, picks the surah portion, records, reviews, saves; renames or exports later. |
 | **Listener** (young kid) | Opens the playlist, plays and repeats, follows along on the page. |
 
-One shared device, one shared library. No accounts, no profiles.
+One shared device, one shared library. No accounts or profiles for normal use. An optional Google Drive backup is the one exception: the parent connects their own Google account only when they explicitly choose to back up or restore.
 
 ## 3. Scope
 
 **In v1:** Madani page search and text view · per-page/per-surah recording · library with rename, delete, export · ordered playlist playback · repeat off/one/all/N · Quran page shown and highlighted during playback · Indonesian + English · installable PWA · works offline for used pages.
 
 **Out of v1 (do not build):** accounts, cloud storage, device sync, sharing to other apps, automatic backup/restore/import, tajweed colouring, playback speed control, manual playlist reordering, splitting one continuous recording into several files, pixel-faithful page facsimile images, non-Madani page numbering, Quran translations.
+
+**v2 direction (implemented, not v1):** [TASKS.md](TASKS.md) Phase 9 tracks cloud backup and two-device sync in three steps — 9A saves a clip into a user-chosen folder (including a Google Drive-synced folder); 9B adds **import/restore** (file input, `updatedAt` last-write-wins per slice), the practical path for two Android phones; 9C adds an optional Google Drive API upload plus download through 9B. The 9C decision is recorded in §4 and §7: off by default, explicit actions, `drive.file`, in-memory token, configurable client ID in Settings.
 
 ## 4. Locked decisions
 
@@ -35,7 +37,8 @@ These are settled. Changing one invalidates downstream tasks — re-open it deli
 | **Mushaf** | Madani, **604 pages**. | Page numbers and surah boundaries follow the Madani edition only. |
 | **Quran display** | Text rendered with **Amiri Quran** (OFL 1.1), self-hosted woff2, subset to the codepoints the text uses plus the precomposed forms HarfBuzz substitutes (163 codepoints, 52 KB). Shows the ayahs of the page. | Not a pixel-faithful page image. Chosen in Spike C: renders Tanzil's Uthmani text correctly, its licence permits bundling *and* subsetting, and it is half the size of KFGQPC Hafs. KFGQPC Hafs renders fine but its licence forbids modification (so no subsetting) and HarfBuzz removed it over licensing. See §8.2. |
 | **Quran text + page mapping** | Tanzil Quran Text (Uthmani, v1.1) for the Arabic text plus Tanzil `quran-data.xml` for the Madani 604-page boundaries. Fetched once at build time, vendored, and pinned by SHA-256. | Licence: CC BY 3.0 — verbatim only (no character changes), the Tanzil Project must be credited with a link to tanzil.net, and the copyright block must ship with the data. Validated 604/604 pages against an independent Madani index; see §8. |
-| **Storage** | IndexedDB blobs on-device plus `navigator.storage.persist()`. | No restore after the user clears site data. Export is the manual backup path. |
+| **Storage** | IndexedDB blobs on-device plus `navigator.storage.persist()`. | No restore after the user clears site data. Export/import, save-to-folder and optional Drive backup are the backup paths. |
+| **Google Drive backup (v2)** | **Optional and off by default.** The user explicitly connects their own Google account, then starts each upload or restore. Scopes are `openid email` plus the minimal `https://www.googleapis.com/auth/drive.file`; only files this app creates are visible. The access token lives in memory only, with no refresh token or app backend. The OAuth client ID is configured locally on the Settings screen, not committed as a secret. Disconnect clears the token and local Drive file ids; the app works fully without Google. | Re-opens NFR-4 and NFR-7 only for the user-initiated action: selected recordings leave the device to the user's Drive. There is no automatic upload, no app server and no telemetry. Revoking access in the Google account also revokes the app's file access. |
 | **Repeat modes** | Off · repeat one · repeat all · repeat N times (presets 2, 3, 5, 10). | Covers memorisation practice. |
 | **Playlist order** | Fixed: page ascending, then surah ascending, then ayah start ascending. | Deterministic; no drag-to-reorder in v1. |
 | **Languages** | Indonesian (default) and English, switcher persisted on device. | All user-facing strings come from one dictionary. |
@@ -80,12 +83,14 @@ These are settled. Changing one invalidates downstream tasks — re-open it deli
 - **FR-4.4** Export a single clip, and export all clips as one file per clip.
 - **FR-4.5** Show storage used and available quota.
 - **FR-4.6** Clips survive app restart, and persistent storage is requested once so the browser is less likely to evict them.
+- **FR-4.7** Optional Google Drive backup: explicitly connect, back up one/all clips, see per-clip backed-up/waiting/failed state, retry, disconnect, and restore through the same import preview and last-write-wins path. Off by default; failures never block recording or saving.
+- **FR-4.8** Settings lets the parent set the Google OAuth client ID on-device; the app stores no client secret and remains fully usable without a client ID.
 
 ### 5.5 Playback and repeat
 
 - **FR-5.1** Play/pause any clip, plus next and previous.
 - **FR-5.2** Repeat mode off / one / all / N applies continuously while browsing. A numeric N repeats *each clip* N times before the queue advances (the memorisation drill, `AAABBBCCC`); `all` loops the playlist itself.
-- **FR-5.3** Now-playing shows current clip, page, surah, elapsed and remaining time.
+- **FR-5.3** Now-playing shows current clip, page, surah, elapsed and remaining time; its controls sit in a drawer that can be closed and reopened without interrupting playback.
 - **FR-5.4** Last clip and position are remembered and resumed on reopen.
 - **FR-5.5** One audio element for the whole app: audio keeps playing while the user navigates.
 - **FR-5.6** Lock-screen / notification metadata via Media Session where supported (best-effort, not required).
@@ -112,21 +117,23 @@ Surah   { number, nameId, nameEn, nameArabic, ayahCount }
 Ayah    { surah, number, text }
 Page    { number, slices: [{ surah, ayahStart, ayahEnd }] }   // 1..604
 Clip    { id, page, surah, ayahStart, ayahEnd, mimeType, bytes,
-          durationMs, createdAt, displayName }
-Settings{ language, repeatMode, repeatCount, lastClipId, lastPositionMs }
+          durationMs, createdAt, updatedAt, displayName }
+Backup  { id, state, fileId?, clipUpdatedAt, error? }   // local Drive state, keyed by clip id
+Settings{ language, repeatMode, repeatCount, lastClipId, lastPositionMs,
+          googleClientId }
 ```
 
 The playlist is derived, never stored: clips sorted by page, surah, ayah start.
 
 ## 7. Non-functional requirements
 
-- **NFR-1** Initial load ≤ 1.5 MB gzipped including the Quran font. Measured after Phase 1: 277 KB gzipped text + 52 KB subset font ≈ 330 KB, and the whole built shell comes to **376 KB gzipped** after the Phase 7 polish, about 25% of the budget. Bundling everything fits, so per-juz lazy loading is optional, not required.
-- **NFR-2** Install size ≤ 5 MB excluding recordings. Measured after Phase 7: **1.55 MB raw** for the whole build, 31% of the budget.
+- **NFR-1** Initial load ≤ 1.5 MB gzipped including the Quran font. Measured after Phase 9C: **390.5 KB gzipped**, about 25% of the budget. Bundling everything fits, so per-juz lazy loading is optional, not required.
+- **NFR-2** Install size ≤ 5 MB excluding recordings. Measured after Phase 9C: **1.607 MB raw** for the whole build, 31% of the budget.
 - **NFR-3** No network needed after first load for pages already visited.
-- **NFR-4** Recordings never leave the device except when the user exports them.
+- **NFR-4** Recordings never leave the device except through an explicit export, save-to-folder, or user-started Google Drive backup.
 - **NFR-5** Supported: Android Chrome ≥ 110, iOS Safari ≥ 16.4 (installed and in-tab), desktop Chrome.
 - **NFR-6** Minimum 44px touch targets, one clear action per screen, Arabic text legible without pinch-zoom.
-- **NFR-7** No backend, no accounts, no telemetry; deployable as static files.
+- **NFR-7** No backend, no accounts for normal use, no telemetry; deployable as static files. The optional Google Drive backup uses the user's own OAuth token in memory and needs no app server.
 - **NFR-8** Empty, loading, permission-denied, quota-exceeded and unsupported-codec states all have designed UI.
 
 ## 8. Validation records (Q1 and Spike C, 2026-11-10)

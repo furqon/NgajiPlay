@@ -59,6 +59,7 @@ export interface Clip {
   bytes: number;
   durationMs: number;
   createdAt: number;
+  updatedAt: number;
   displayName: string;
   /** Real channel count from track.getSettings() (REQ §8.3). */
   channels?: number;
@@ -68,10 +69,23 @@ export interface ClipRecord extends Clip {
   blob: Blob;
 }
 
+export type BackupState = 'pending' | 'uploaded' | 'failed';
+
+/** Local Drive state keyed by clip id. It survives re-recording the same slice. */
+export interface BackupRecord {
+  id: string;
+  state: BackupState;
+  fileId?: string;
+  clipUpdatedAt: number;
+  updatedAt: number;
+  error?: string;
+}
+
 export interface Settings {
   language: 'id' | 'en';
   repeatMode: 'off' | 'one' | 'all' | 'count';
   repeatCount: number;
   lastClipId: string | null;
   lastPositionMs: number;
+  googleClientId?: string;
 }

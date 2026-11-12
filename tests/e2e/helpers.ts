@@ -66,6 +66,7 @@ export async function seed(page: Page, clips: SeedClip[]): Promise<void> {
             bytes: blob.size,
             durationMs: Math.round(item.seconds * 1000),
             createdAt: Date.UTC(2026, 10, 10, 9, 0),
+            updatedAt: Date.UTC(2026, 10, 10, 9, 0),
             displayName: item.name,
             channels: 1,
           },

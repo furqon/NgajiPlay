@@ -12,7 +12,6 @@ import { fill, t } from '../strings';
 import type { Clip, PageSlice, QuranData } from '../types';
 import { el } from './dom';
 import { formatDuration, formatKilobytes } from './format';
-import { sliceMushaf } from './mushaf';
 
 export interface RecorderView {
   /** The element the panel is inserted into. */
@@ -95,8 +94,8 @@ export function openRecorder(view: RecorderView): void {
         to: slice.ayahEnd,
       }),
     }),
-    // FR-2.5: the text stays in view while capturing.
-    sliceMushaf(view.data, slice, 'recorder-text'),
+    // No second copy of the slice: the page above already shows these ayahs,
+    // so the panel spends its height on the timer and the controls only.
     timer,
     status,
     warning,
@@ -260,6 +259,7 @@ export function openRecorder(view: RecorderView): void {
   }
 
   function buildClip(finished: Recording): Clip {
+    const now = Date.now();
     return {
       id: clipId(page, slice.surah),
       page,
@@ -269,7 +269,8 @@ export function openRecorder(view: RecorderView): void {
       mimeType: finished.mimeType,
       bytes: finished.blob.size,
       durationMs: finished.durationMs,
-      createdAt: Date.now(),
+      createdAt: now,
+      updatedAt: now,
       displayName: defaultClipName({
         page,
         surah: slice.surah,

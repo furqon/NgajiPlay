@@ -1,13 +1,18 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   clearAll,
+  clearBackups,
   clipCount,
   clipId,
+  deleteBackup,
   deleteClip,
+  getBackup,
   getClip,
   getSetting,
+  listBackups,
   listClips,
   openDatabase,
+  putBackup,
   putClip,
   setSetting,
 } from '../../src/store/db';
@@ -23,6 +28,7 @@ const makeClip = (page: number, surah: number, overrides: Partial<Clip> = {}): C
   bytes: 12,
   durationMs: 4200,
   createdAt: 1_700_000_000_000,
+  updatedAt: 1_700_000_000_000,
   displayName: `p${String(page).padStart(3, '0')}-s${String(surah).padStart(3, '0')}`,
   ...overrides,
 });
@@ -32,11 +38,12 @@ beforeEach(async () => {
 });
 
 describe('schema', () => {
-  it('creates the clips and settings stores (REQ §6)', async () => {
+  it('creates the clips, settings and backups stores (REQ §6)', async () => {
     const db = await openDatabase();
     const stores = Array.from(db.objectStoreNames);
     expect(stores).toContain('clips');
     expect(stores).toContain('settings');
+    expect(stores).toContain('backups');
   });
 });
 
@@ -98,5 +105,40 @@ describe('settings', () => {
   it('stores structured values', async () => {
     await setSetting('repeat', { mode: 'one', count: 3 });
     expect(await getSetting('repeat', null)).toEqual({ mode: 'one', count: 3 });
+  });
+});
+
+describe('backups', () => {
+  it('round-trips Drive state by clip id and replaces updates', async () => {
+    await putBackup({
+      id: '2:2',
+      state: 'pending',
+      clipUpdatedAt: 100,
+      updatedAt: 110,
+    });
+    expect((await getBackup('2:2'))?.state).toBe('pending');
+
+    await putBackup({
+      id: '2:2',
+      state: 'uploaded',
+      fileId: 'file-1',
+      clipUpdatedAt: 100,
+      updatedAt: 120,
+    });
+    const records = await listBackups();
+    expect(records).toHaveLength(1);
+    expect(records[0]?.fileId).toBe('file-1');
+    expect(records[0]?.state).toBe('uploaded');
+  });
+
+  it('deletes one backup and clears all of them', async () => {
+    await putBackup({ id: '1:1', state: 'failed', clipUpdatedAt: 1, updatedAt: 2 });
+    await putBackup({ id: '2:2', state: 'uploaded', fileId: 'f', clipUpdatedAt: 1, updatedAt: 2 });
+    await deleteBackup('1:1');
+    expect(await getBackup('1:1')).toBeUndefined();
+    expect(await listBackups()).toHaveLength(1);
+
+    await clearBackups();
+    expect(await listBackups()).toHaveLength(0);
   });
 });

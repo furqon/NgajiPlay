@@ -17,6 +17,7 @@ function clip(overrides: Partial<Clip> = {}): Clip {
     bytes: 12_000,
     durationMs: 4_000,
     createdAt: 1_760_000_000_000,
+    updatedAt: 1_760_000_000_000,
     displayName: 'p002-s002-al-baqarah-a001-005.m4a',
     ...overrides,
   };
