@@ -1262,6 +1262,8 @@ h1 {
 .clip-meta:focus-visible,
 .player-button:focus-visible,
 .player-drawer-toggle:focus-visible,
+.player-hide:focus-visible,
+.player-mini:focus-visible,
 .player-meta:focus-visible {
   outline: 3px solid var(--deep);
   outline-offset: 2px;
@@ -1377,7 +1379,8 @@ body.has-player {
   gap: 6px;
 }
 
-.player-drawer-toggle {
+.player-drawer-toggle,
+.player-hide {
   width: 44px;
   height: 44px;
   padding: 0;
@@ -1389,6 +1392,42 @@ body.has-player {
   font-size: 1.15rem;
   line-height: 1;
   cursor: pointer;
+}
+
+.player-hide {
+  color: var(--muted);
+  font-size: 1.35rem;
+}
+
+/* Restores the bar after it is hidden, without covering the page. */
+.player-mini {
+  position: fixed;
+  right: calc(12px + env(safe-area-inset-right));
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--deep);
+  border-radius: 999px;
+  background: var(--deep);
+  color: #fbf8f1;
+  font: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  box-shadow: 0 6px 18px rgb(31 36 33 / 18%);
+  cursor: pointer;
+}
+
+.player-mini[hidden] {
+  display: none;
+}
+
+/* Above the fixed bottom nav when it is present. */
+body.has-bottom-nav .player-mini {
+  bottom: calc(74px + env(safe-area-inset-bottom));
 }
 
 .player-drawer {

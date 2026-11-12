@@ -84,7 +84,20 @@ export function mountPlayerBar(): HTMLElement {
     text: '⌄',
   });
 
-  const actions = el('div', { class: 'player-actions' }, drawerToggle);
+  // Closing the whole bar is separate from collapsing its controls: reading
+  // mode may want the bar gone entirely while the recitation keeps playing.
+  const hide = el('button', {
+    class: 'player-hide',
+    attrs: {
+      type: 'button',
+      'data-testid': 'player-hide',
+      'aria-label': t('playerHide'),
+      title: t('playerHide'),
+    },
+    text: '\u00d7',
+  });
+
+  const actions = el('div', { class: 'player-actions' }, hide, drawerToggle);
   const head = el(
     'div',
     { class: 'player-head' },
@@ -120,7 +133,23 @@ export function mountPlayerBar(): HTMLElement {
     el('div', { class: 'player-inner' }, head, followSlot, status, drawer),
   );
 
-  document.body.append(bar);
+  // The way back after hiding the bar: one small control, still 44px.
+  const mini = el(
+    'button',
+    {
+      class: 'player-mini',
+      attrs: {
+        type: 'button',
+        'data-testid': 'player-mini',
+        'aria-label': t('playerShow'),
+        title: t('playerShow'),
+        hidden: true,
+      },
+    },
+    el('span', { attrs: { 'aria-hidden': 'true' }, text: '\u266a' }),
+  );
+
+  document.body.append(bar, mini);
 
   // The bar's height changes with the title, the drawer state and the safe
   // area; page padding follows the measured height instead of a fixed guess.
@@ -229,6 +258,20 @@ export function mountPlayerBar(): HTMLElement {
     remaining.textContent = `−${formatDuration(Math.max(0, duration - ms))}`;
   });
 
+  let barHidden = false;
+  const setBarHidden = (hidden: boolean): void => {
+    const hasClip = Boolean(player.state.clip);
+    barHidden = hidden && hasClip;
+    bar.hidden = !hasClip || barHidden;
+    mini.hidden = !hasClip || !barHidden;
+    document.body.classList.toggle('has-player', hasClip && !barHidden);
+    syncBarHeight();
+    if (barHidden) mini.focus({ preventScroll: true });
+    else drawerToggle.focus({ preventScroll: true });
+  };
+  hide.addEventListener('click', () => setBarHidden(true));
+  mini.addEventListener('click', () => setBarHidden(false));
+
   let drawerOpen = true;
   const setDrawerOpen = (open: boolean): void => {
     drawerOpen = open;
@@ -245,11 +288,18 @@ export function mountPlayerBar(): HTMLElement {
 
   drawerToggle.addEventListener('click', () => setDrawerOpen(!drawerOpen));
 
+  let renderedClipId: string | null = null;
   const render = (state: PlayerState): void => {
     const clip = state.clip;
-    bar.hidden = !clip;
-    document.body.classList.toggle('has-player', Boolean(clip));
+    // A different recording is a fresh intent: bring the full bar back.
+    if (clip && clip.id !== renderedClipId) barHidden = false;
+    renderedClipId = clip?.id ?? null;
+
+    bar.hidden = !clip || barHidden;
+    mini.hidden = !clip || !barHidden;
+    document.body.classList.toggle('has-player', Boolean(clip) && !barHidden);
     if (!clip) {
+      barHidden = false;
       document.body.classList.remove('player-drawer-closed');
       title.removeAttribute('title');
       syncBarHeight();
@@ -300,6 +350,10 @@ export function mountPlayerBar(): HTMLElement {
     repeat.setAttribute('aria-label', t('playerRepeatMode'));
     previous.setAttribute('aria-label', t('playerPrevious'));
     next.setAttribute('aria-label', t('playerNext'));
+    hide.setAttribute('aria-label', t('playerHide'));
+    hide.setAttribute('title', t('playerHide'));
+    mini.setAttribute('aria-label', t('playerShow'));
+    mini.setAttribute('title', t('playerShow'));
     status.textContent = state.status === 'error' ? t('playerLoadFailed') : '';
 
     for (const option of repeatDialog.querySelectorAll<HTMLElement>('.repeat-option')) {

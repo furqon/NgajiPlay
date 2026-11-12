@@ -32,6 +32,11 @@ test('shell renders as a secure, installable document', async ({ page }) => {
 
   // The manifest must be linked, or the browser will not offer installation.
   await expect(page.locator('link[rel="manifest"]')).toHaveAttribute('href', '/manifest.webmanifest');
+  // The standard capability meta silences Chrome's deprecation of the Apple-only one.
+  await expect(page.locator('meta[name="mobile-web-app-capable"]')).toHaveAttribute(
+    'content',
+    'yes',
+  );
 
   expect(errors).toEqual([]);
 });

@@ -157,6 +157,14 @@ async function start(): Promise<void> {
  * the offline state from NFR-8: ready, first load, offline, or unsupported.
  */
 async function registerServiceWorker(): Promise<void> {
+  // `vite dev` has no built worker: /sw.js falls through to index.html, and the
+  // browser rejects that with "unsupported MIME type ('text/html')". Offline is
+  // a production-build concern, exercised by the shell tests against `preview`.
+  if (!import.meta.env.PROD) {
+    setStatus('noSw');
+    return;
+  }
+
   if (!('serviceWorker' in navigator)) {
     setStatus('noSw');
     return;

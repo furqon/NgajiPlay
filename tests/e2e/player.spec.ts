@@ -87,6 +87,31 @@ test('closes and reopens the controls drawer without interrupting playback', asy
   await expect(page.getByTestId('player-toggle')).toHaveText('Jeda');
 });
 
+test('hides the whole player without stopping playback, and restores it', async ({ page }) => {
+  await seed(page, [FIRST]);
+  await page.getByTestId('clip-play').first().click();
+
+  const bar = page.getByTestId('player');
+  const mini = page.getByTestId('player-mini');
+  await expect(bar).toBeVisible();
+  await expect(mini).toBeHidden();
+
+  await page.getByTestId('player-hide').click();
+  await expect(bar).toBeHidden();
+  await expect(mini).toBeVisible();
+  await expect(mini).toHaveAttribute('aria-label', 'Tampilkan pemutar');
+
+  // The recitation carries on: the clock keeps moving with the bar gone.
+  const before = await elapsedSeconds(page);
+  await expect.poll(() => elapsedSeconds(page), { timeout: 6_000 }).toBeGreaterThan(before);
+  await expect(page.getByTestId('player-toggle')).toHaveText('Jeda');
+
+  await mini.click();
+  await expect(bar).toBeVisible();
+  await expect(mini).toBeHidden();
+  await expect(page.getByTestId('player-title')).toHaveText('Ali satu');
+});
+
 test('next and previous move through the playlist and mark the playing row', async ({ page }) => {
   await seed(page, [FIRST, SECOND]);
   await page.getByTestId('clip-play').first().click();

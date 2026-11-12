@@ -33,6 +33,9 @@ export function mountInstall(target: HTMLElement): void {
   let deferred: InstallPromptEvent | null = null;
 
   window.addEventListener('beforeinstallprompt', (event) => {
+    // Suppresses Chrome's own mini-infobar so the app can show its one-tap
+    // install icon instead. Chrome logs an informational "banner not shown"
+    // warning for this, which is expected: prompt() runs on the user's tap.
     event.preventDefault();
     deferred = event as InstallPromptEvent;
     button.hidden = false;
